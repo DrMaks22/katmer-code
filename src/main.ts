@@ -7,9 +7,21 @@ import { inlineDiffExtensions } from "./editor-extension";
 import { t } from "./i18n";
 import { existsSync, writeFileSync, unlinkSync, mkdirSync, readFileSync, readdirSync, watch } from "fs";
 import { join } from "path";
+import { pathToFileURL } from "url";
 import { homedir } from "os";
-// Electron shell — accessed via window.require (Obsidian's Electron runtime)
-const electronShell = (window as unknown as { require: (m: string) => Record<string, unknown> }).require("electron").shell as { openPath: (path: string) => Promise<string> };
+
+type ElectronShell = { openPath: (path: string) => Promise<string> };
+
+function getElectronShell(): ElectronShell | null {
+  try {
+    const req = ((globalThis as unknown as { require?: (m: string) => unknown }).require
+      ?? (window as unknown as { require?: (m: string) => unknown }).require);
+    const electron = req?.("electron") as { shell?: ElectronShell } | undefined;
+    return electron?.shell ?? null;
+  } catch {
+    return null;
+  }
+}
 
 // Skill contents bundled at build time (esbuild loader: { ".md": "text" })
 // @ts-ignore
@@ -213,8 +225,13 @@ export default class ClaudeNativePlugin extends Plugin {
             cls: "katmer-report-notice-btn",
             text: t("main.notice.openInBrowser"),
           });
+          const shell = getElectronShell();
           browserBtn.addEventListener("click", () => {
-            void electronShell.openPath(fullPath);
+            if (shell) {
+              void shell.openPath(fullPath);
+            } else {
+              window.open(pathToFileURL(fullPath).toString(), "_blank");
+            }
             notice.hide();
           });
 
