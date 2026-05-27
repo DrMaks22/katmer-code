@@ -647,11 +647,17 @@ export class ClaudeChatView extends ItemView {
 
     // 1. Our skills first
     for (const skill of SKILL_CATALOG) {
-      if (query && !skill.name.toLowerCase().includes(query) && !skill.description.toLowerCase().includes(query)) continue;
+      const localizedDesc = t(skill.descriptionKey);
+      if (
+        query &&
+        !skill.name.toLowerCase().includes(query) &&
+        !skill.description.toLowerCase().includes(query) &&
+        !localizedDesc.toLowerCase().includes(query)
+      ) continue;
       seenNames.add(skill.name);
       items.push({
         name: skill.name,
-        desc: skill.description,
+        desc: localizedDesc,
         source: "skill",
         enabled: enabledSkills.includes(skill.id),
       });
