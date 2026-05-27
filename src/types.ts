@@ -128,6 +128,20 @@ export interface SessionInfo {
 export type ModelChoice = "opus" | "opus[1m]" | "sonnet" | "haiku";
 export type EffortLevel = "low" | "medium" | "high" | "max";
 
+export const MODEL_LABEL_KEYS: Record<ModelChoice, string> = {
+  "opus[1m]": "app.model.opus1m.label",
+  opus: "app.model.opus.label",
+  sonnet: "app.model.sonnet.label",
+  haiku: "app.model.haiku.label",
+};
+
+export const MODEL_DESCRIPTION_KEYS: Record<ModelChoice, string> = {
+  "opus[1m]": "app.model.opus1m.description",
+  opus: "app.model.opus.description",
+  sonnet: "app.model.sonnet.description",
+  haiku: "app.model.haiku.description",
+};
+
 export const MODEL_LABELS: Record<ModelChoice, string> = {
   "opus[1m]": "Opus 1M",
   opus: "Opus",
@@ -140,6 +154,13 @@ export const EFFORT_LABELS: Record<EffortLevel, string> = {
   medium: "Med",
   high: "High",
   max: "Max",
+};
+
+export const EFFORT_LABEL_KEYS: Record<EffortLevel, string> = {
+  low: "app.effort.low.label",
+  medium: "app.effort.medium.label",
+  high: "app.effort.high.label",
+  max: "app.effort.max.label",
 };
 
 // ── Session History ──
@@ -160,27 +181,39 @@ export interface SavedSession {
 export interface SkillDef {
   id: string;
   name: string;
+  nameKey: string;
   description: string;
-  category: "research" | "writing" | "analysis" | "transform";
+  descriptionKey: string;
+  category: SkillCategory;
+  categoryKey: string;
   fileName: string;  // e.g. "peer-review.md"
 }
 
+export type SkillCategory = "research" | "writing" | "analysis" | "transform";
+
+export const CATEGORY_LABEL_KEYS: Record<SkillCategory, string> = {
+  research: "app.category.research.label",
+  writing: "app.category.writing.label",
+  analysis: "app.category.analysis.label",
+  transform: "app.category.transform.label",
+};
+
 export const SKILL_CATALOG: SkillDef[] = [
   // Research
-  { id: "lit-search", name: "/lit-search", description: "Multi-database literature search", category: "research", fileName: "lit-search.md" },
-  { id: "citation-network", name: "/citation-network", description: "Citation graph analysis + visualization", category: "research", fileName: "citation-network.md" },
-  { id: "research-gap", name: "/research-gap", description: "Research gap analysis + trends", category: "research", fileName: "research-gap.md" },
+  { id: "lit-search", name: "/lit-search", nameKey: "skill.lit-search.name", description: "Multi-database literature search", descriptionKey: "skill.lit-search.description", category: "research", categoryKey: CATEGORY_LABEL_KEYS.research, fileName: "lit-search.md" },
+  { id: "citation-network", name: "/citation-network", nameKey: "skill.citation-network.name", description: "Citation graph analysis + visualization", descriptionKey: "skill.citation-network.description", category: "research", categoryKey: CATEGORY_LABEL_KEYS.research, fileName: "citation-network.md" },
+  { id: "research-gap", name: "/research-gap", nameKey: "skill.research-gap.name", description: "Research gap analysis + trends", descriptionKey: "skill.research-gap.description", category: "research", categoryKey: CATEGORY_LABEL_KEYS.research, fileName: "research-gap.md" },
   // Writing
-  { id: "peer-review", name: "/peer-review", description: "Academic peer review (8 criteria)", category: "writing", fileName: "peer-review.md" },
-  { id: "cite-verify", name: "/cite-verify", description: "Citation verification via DOI/CrossRef", category: "writing", fileName: "cite-verify.md" },
-  { id: "abstract", name: "/abstract", description: "Generate abstract (5 formats, bilingual)", category: "writing", fileName: "abstract.md" },
+  { id: "peer-review", name: "/peer-review", nameKey: "skill.peer-review.name", description: "Academic peer review (8 criteria)", descriptionKey: "skill.peer-review.description", category: "writing", categoryKey: CATEGORY_LABEL_KEYS.writing, fileName: "peer-review.md" },
+  { id: "cite-verify", name: "/cite-verify", nameKey: "skill.cite-verify.name", description: "Citation verification via DOI/CrossRef", descriptionKey: "skill.cite-verify.description", category: "writing", categoryKey: CATEGORY_LABEL_KEYS.writing, fileName: "cite-verify.md" },
+  { id: "abstract", name: "/abstract", nameKey: "skill.abstract.name", description: "Generate abstract (5 formats, bilingual)", descriptionKey: "skill.abstract.description", category: "writing", categoryKey: CATEGORY_LABEL_KEYS.writing, fileName: "abstract.md" },
   // Analysis
-  { id: "journal-match", name: "/journal-match", description: "Journal recommendation for manuscript", category: "analysis", fileName: "journal-match.md" },
+  { id: "journal-match", name: "/journal-match", nameKey: "skill.journal-match.name", description: "Journal recommendation for manuscript", descriptionKey: "skill.journal-match.description", category: "analysis", categoryKey: CATEGORY_LABEL_KEYS.analysis, fileName: "journal-match.md" },
   // Design system (auto-installed with any skill)
-  { id: "report-template", name: "/report-template", description: "Report design system (academic book aesthetic)", category: "transform", fileName: "report-template.md" },
+  { id: "report-template", name: "/report-template", nameKey: "skill.report-template.name", description: "Report design system (academic book aesthetic)", descriptionKey: "skill.report-template.description", category: "transform", categoryKey: CATEGORY_LABEL_KEYS.transform, fileName: "report-template.md" },
 ];
 
-export const CATEGORY_LABELS: Record<string, string> = {
+export const CATEGORY_LABELS: Record<SkillCategory, string> = {
   research: "Research",
   writing: "Writing & editing",
   analysis: "Analysis",

@@ -1,115 +1,115 @@
-Build a citation network from "$ARGUMENTS".
+Построй сеть цитирования на основе "$ARGUMENTS".
 
-Input can be:
-- One or more DOIs: "10.1038/s41586-023-06221-2"
-- Paper titles: "Attention is All You Need"
-- Mix: "10.1038/... + transformer architecture survey"
+Входными данными могут быть:
+- Один или несколько DOI: "10.1038/s41586-023-06221-2"
+- Названия статей: "Attention is All You Need"
+- Смешанный вариант: "10.1038/... + transformer architecture survey"
 
-## MAIN FLOW
+## ОСНОВНОЙ ПОТОК
 
 ```
-Main Session — coordination
+Основная сессия — координация
   │
-  ├── STEP 1: Resolve seed papers (self)
-  ├── STEP 2: Subagent → fetch references + citations, build network
-  ├── STEP 3: Subagent → identify key nodes + clusters
-  └── STEP 4: Report subagent → HTML visualization with vis.js
+  ├── ШАГ 1: Разрешить исходные статьи (самостоятельно)
+  ├── ШАГ 2: Субагент → собрать ссылки и цитирования, построить сеть
+  ├── ШАГ 3: Субагент → определить ключевые узлы и кластеры
+  └── ШАГ 4: Субагент отчёта → HTML-визуализация на vis.js
 ```
 
-## STEP 1: Resolve Seed Papers (self)
+## ШАГ 1: Разреши исходные статьи (самостоятельно)
 
-For each input:
+Для каждого входного элемента:
 
-**If DOI:**
+**Если указан DOI:**
 ```
 WebFetch: https://api.semanticscholar.org/graph/v1/paper/DOI:{doi}?fields=paperId,title,authors,year,venue,citationCount,references.paperId,references.title,references.authors,references.year,references.citationCount,references.externalIds,citations.paperId,citations.title,citations.authors,citations.year,citations.citationCount,citations.externalIds
 ```
 
-**If title:**
+**Если указано название:**
 ```
 WebFetch: https://api.semanticscholar.org/graph/v1/paper/search?query={title}&limit=1&fields=paperId,title,authors,year
 ```
-Then use paperId for full fetch above.
+Затем используй paperId для полного запроса выше.
 
-## STEP 2: Build Network (subagent)
+## ШАГ 2: Построй сеть (субагент)
 
-Launch subagent:
+Запусти субагента:
 
 ```
-TASK: Build a citation network from seed papers.
+ЗАДАЧА: Построй сеть цитирования на основе исходных статей.
 
-SEED PAPERS (with references and citations):
+ИСХОДНЫЕ СТАТЬИ (со списком ссылок и цитирований):
 {data from step 1}
 
-PROCESS:
-1. List each seed's references (backward) and citations (forward)
+ПРОЦЕСС:
+1. Для каждой исходной статьи перечисли её ссылки (назад по цепочке) и цитирования (вперёд по цепочке)
 
-2. Find OVERLAP: papers appearing in multiple seeds' lists
-   These are KEY PAPERS in the field.
+2. Найди ПЕРЕСЕЧЕНИЯ: статьи, встречающиеся в списках нескольких исходных работ
+   Это КЛЮЧЕВЫЕ СТАТЬИ области.
 
-3. For top 10 most-connected papers, fetch their refs too (1 level deeper):
+3. Для 10 наиболее связанных статей подтяни их ссылки ещё на один уровень глубже:
    WebFetch: https://api.semanticscholar.org/graph/v1/paper/{paperId}?fields=title,authors,year,citationCount,references.title,references.citationCount
 
-4. Also check OpenCitations for additional links:
+4. Также проверь OpenCitations на дополнительные связи:
    WebFetch: https://opencitations.net/index/api/v2/citations/{doi}
    WebFetch: https://opencitations.net/index/api/v2/references/{doi}
 
-5. Identify clusters:
-   - Methodological (shared methods)
-   - Temporal (foundational vs. recent)
-   - Thematic (shared topic keywords)
+5. Определи кластеры:
+   - Методологические (общие методы)
+   - Временные (фундаментальные и более новые)
+   - Тематические (общие ключевые слова темы)
 
-OUTPUT:
-- Node list: [{id, title, authors, year, citations, role: seed|key|bridge|peripheral}]
-- Edge list: [{source, target, type: cites}]
-- Clusters: [{name, papers, description}]
-- Key papers: top 10 by connectivity
-- Foundational works: highly cited, >10 years old
-- Recent frontier: last 2 years, growing citations
+ВЫХОД:
+- Список узлов: [{id, title, authors, year, citations, role: seed|key|bridge|peripheral}]
+- Список рёбер: [{source, target, type: cites}]
+- Кластеры: [{name, papers, description}]
+- Ключевые статьи: топ-10 по связности
+- Фундаментальные работы: часто цитируемые, старше 10 лет
+- Современный фронтир: последние 2 года, с ростом цитирований
 ```
 
-## STEP 3: Insights (self or subagent)
+## ШАГ 3: Инсайты (самостоятельно или через субагента)
 
-From network data identify:
-- **Seminal papers**: highest citations, referenced by most seeds
-- **Bridge papers**: connect different clusters
-- **Rising stars**: low total but high recent citations
-- **Research front**: newest papers citing seeds
+На основе сетевых данных определи:
+- **Знаковые статьи**: наибольшее число цитирований, упоминаются большинством исходных работ
+- **Мостовые статьи**: соединяют разные кластеры
+- **Восходящие работы**: пока мало цитирований в целом, но много в последнее время
+- **Исследовательский фронтир**: самые новые статьи, которые цитируют исходные работы
 
-## STEP 4: HTML Visualization (report subagent)
+## ШАГ 4: HTML-визуализация (субагент отчёта)
 
 ```
-File: reports/{date}-citation-network-{topic}.html
+Файл: reports/{date}-citation-network-{topic}.html
 
-INCLUDES:
-1. Network graph — vis.js (CDN: https://unpkg.com/vis-network/standalone/umd/vis-network.min.js)
-   - Nodes sized by citation count
-   - Colored by cluster
-   - Seed papers highlighted (star shape)
-   - Click node → details panel
+ВКЛЮЧАЕТ:
+1. Граф сети — vis.js (CDN: https://unpkg.com/vis-network/standalone/umd/vis-network.min.js)
+   - Размер узлов зависит от числа цитирований
+   - Цвет зависит от кластера
+   - Исходные статьи выделены (форма звезды)
+   - Клик по узлу → панель деталей
 
-2. Timeline view — horizontal, papers as dots on year axis
-   - Connected by citation arrows
-   - Colored by cluster
+2. Временная шкала — горизонтальная, статьи в виде точек на оси лет
+   - Соединены стрелками цитирования
+   - Цвет зависит от кластера
 
-3. Key Papers table:
-   | # | Title | Authors | Year | Cites | Role | Cluster |
+3. Таблица ключевых статей:
+   | # | Название | Авторы | Год | Цитирует | Роль | Кластер |
 
-4. Cluster summary cards
+4. Карточки сводки по кластерам
 
-5. Statistics:
-   - Total papers in network
-   - Date range
-   - Most prolific authors
-   - Most common venues
+5. Статистика:
+   - Общее число статей в сети
+   - Диапазон дат
+   - Наиболее продуктивные авторы
+   - Наиболее часто встречающиеся журналы
 
-DESIGN: Tailwind CDN + vis.js. Interactive.
-Open with: open {file_path}
+ДИЗАЙН: Tailwind CDN + vis.js. Интерактивный.
+Открыть с помощью: open {file_path}
 ```
 
-## API REFERENCE
+## СПРАВОЧНИК API
 
-### Semantic Scholar — Paper + Refs + Citations
+### Semantic Scholar — статья + ссылки + цитирования
 ```
 GET /graph/v1/paper/{paperId}?fields=title,authors,year,venue,citationCount,references.title,references.authors,references.year,references.citationCount,references.externalIds,citations.title,citations.authors,citations.year,citations.citationCount,citations.externalIds
 
@@ -131,20 +131,20 @@ GET /index/api/v2/references/{doi}
 Returns: [{citing, cited, creation, timespan}]
 ```
 
-## ERROR HANDLING
-- Seed not found: try alternative ID types (DOI → title search)
-- >500 citations: note truncation, focus on top-cited
-- vis.js CDN down: fall back to static table
-- Rate limited: smaller batches with delays
-- Circular citations: mark as bidirectional
+## ОБРАБОТКА ОШИБОК
+- Исходная статья не найдена: попробуй альтернативные типы идентификаторов (DOI → поиск по названию)
+- >500 цитирований: укажи усечение, сосредоточься на самых цитируемых
+- CDN vis.js недоступен: перейди к статической таблице
+- Ограничение по запросам: используй меньшие пакеты с задержками
+- Циклические цитирования: пометь как двунаправленные
 
-## TOKEN BUDGET
-- Main: ~5K (seed resolution)
-- Network subagent: ~20-40K
-- Visualization subagent: ~10K
-- Total: ~35-55K
-- LIMIT depth to 2 levels from seed to keep manageable
+## БЮДЖЕТ ТОКЕНОВ
+- Основная сессия: ~5K (разрешение исходных статей)
+- Субагент сети: ~20-40K
+- Субагент визуализации: ~10K
+- Итого: ~35-55K
+- Ограничь глубину до 2 уровней от исходной статьи, чтобы объём оставался управляемым
 
-## REPORT DESIGN
-When writing the HTML report, follow the design system in /report-template EXACTLY.
-Do NOT use Tailwind CDN. Use the custom CSS variables, Crimson Pro font, and academic book aesthetic defined there.
+## ДИЗАЙН ОТЧЁТА
+При написании HTML-отчёта строго следуй дизайн-системе в /report-template.
+НЕ используй Tailwind CDN. Используй пользовательские CSS-переменные, шрифт Crimson Pro и академическую книжную эстетику, определённую там.

@@ -1,135 +1,135 @@
-Analyze research gaps for "$ARGUMENTS".
+Проанализируй исследовательские разрывы для "$ARGUMENTS".
 
-## MAIN FLOW
+## ОСНОВНОЙ ПОТОК
 
 ```
-Main Session — coordination
+Основная сессия — координация
   │
-  ├── STEP 1: Subagent → comprehensive literature search + trend data
-  ├── STEP 2: Subagent → identify gaps from landscape data
-  └── STEP 3: Report subagent → HTML gap analysis report
+  ├── ШАГ 1: Субагент → всесторонний поиск литературы + данные о трендах
+  ├── ШАГ 2: Субагент → определить разрывы на основе карты ландшафта
+  └── ШАГ 3: Субагент отчёта → HTML-отчёт по анализу разрывов
 ```
 
-## STEP 1: Literature Landscape (subagent)
+## ШАГ 1: Ландшафт литературы (субагент)
 
-Launch subagent:
+Запусти субагента:
 
 ```
-TASK: Map the research landscape for "{topic}".
+ЗАДАЧА: Составь карту исследовательского ландшафта для "{topic}".
 
-Generate 5 search queries:
-1. Core topic (exact)
-2. Broader field
-3. Methodology-focused
-4. Application-focused
+Сгенерируй 5 поисковых запросов:
+1. Ядро темы (точно)
+2. Более широкая область
+3. Фокус на методологии
+4. Фокус на применении
 5. "{topic} challenges OR future OR limitations"
 
-### Semantic Scholar — recent + highly cited
-For each query:
+### Semantic Scholar — недавние и высокоцитируемые работы
+Для каждого запроса:
 WebFetch: https://api.semanticscholar.org/graph/v1/paper/search?query={query}&limit=40&fields=title,authors,year,venue,citationCount,abstract,fieldsOfStudy&year=2019-2026
 
-### OpenAlex — publication trends over time
+### OpenAlex — динамика публикаций во времени
 WebFetch: https://api.openalex.org/works?search={core_query}&group_by=publication_year&mailto=katmercode@example.com
 
-### OpenAlex — concept trends
+### OpenAlex — динамика понятий
 WebFetch: https://api.openalex.org/concepts?search={topic}&mailto=katmercode@example.com
 
-### OpenAlex — recent vs old comparison
-Recent: https://api.openalex.org/works?search={topic}&filter=publication_year:2023-2026&per_page=20&sort=cited_by_count:desc&mailto=katmercode@example.com
-Old: https://api.openalex.org/works?search={topic}&filter=publication_year:2010-2015&per_page=20&sort=cited_by_count:desc&mailto=katmercode@example.com
+### OpenAlex — сравнение недавних и старых работ
+Недавние: https://api.openalex.org/works?search={topic}&filter=publication_year:2023-2026&per_page=20&sort=cited_by_count:desc&mailto=katmercode@example.com
+Старые: https://api.openalex.org/works?search={topic}&filter=publication_year:2010-2015&per_page=20&sort=cited_by_count:desc&mailto=katmercode@example.com
 
-COLLECT:
-- Paper count per year (2010-2026)
-- Top 30 papers by citations (all time)
-- Top 20 papers from last 2 years
-- Top venues
-- Key authors (most papers + most cited)
-- Related concepts/subfields
-- Abstracts of top 30 papers (for theme extraction)
+СОБЕРИ:
+- Число статей по годам (2010-2026)
+- Топ-30 статей по цитированию (за всё время)
+- Топ-20 статей за последние 2 года
+- Топовые журналы
+- Ключевых авторов (больше всего статей + самые цитируемые)
+- Связанные понятия / подобласти
+- Аннотации топ-30 статей (для извлечения тем)
 ```
 
-## STEP 2: Gap Identification (subagent)
+## ШАГ 2: Выявление разрывов (субагент)
 
-Launch subagent with landscape data:
+Запусти субагента с данными о ландшафте:
 
 ```
-TASK: Identify research gaps.
+ЗАДАЧА: Определи исследовательские разрывы.
 
-LANDSCAPE DATA:
+ДАННЫЕ О ЛАНДШАФТЕ:
 {output from step 1}
 
-ANALYZE:
+АНАЛИЗИРУЙ:
 
-### A. Temporal Gaps
-- Topics studied 5+ years ago but NOT recently revisited
-- Declining publication count despite unresolved questions
-- Emerging topics with <5 papers
+### A. Временные разрывы
+- Темы, которые изучались 5+ лет назад, но НЕ пересматривались недавно
+- Снижение числа публикаций при нерешённых вопросах
+- Возникающие темы с <5 статьями
 
-### B. Methodological Gaps
-- Mostly theoretical → empirical gap
-- Mostly quantitative → qualitative gap
-- Mostly single-country → comparative gap
-- No meta-analyses/reviews → synthesis gap
+### B. Методологические разрывы
+- В основном теоретические → эмпирический разрыв
+- В основном количественные → качественный разрыв
+- В основном в одной стране → сравнительный разрыв
+- Нет метаанализов / обзоров → разрыв синтеза
 
-### C. Thematic Gaps
-- Extract themes from top paper abstracts
-- Find theme COMBINATIONS that don't appear
-  (e.g., "fairness + NLP" has 200 papers, "fairness + speech" has 3)
-- Disconnected clusters that should connect
+### C. Тематические разрывы
+- Извлеки темы из аннотаций топовых статей
+- Найди КОМБИНАЦИИ тем, которых не видно
+  (например, "fairness + NLP" имеет 200 статей, а "fairness + speech" — 3)
+- Разрозненные кластеры, которые должны быть связаны
 
-### D. Application Gaps
-- Theory exists but no applied/practical studies
-- Applied in one domain but not another
+### D. Прикладные разрывы
+- Теория есть, а прикладных / практических исследований нет
+- Применение есть в одной области, но отсутствует в другой
 
-### E. Population/Context Gaps
-- Geographic: studied in US/EU but not elsewhere?
-- Demographic: adults but not children?
-- Domain: medicine but not law?
+### E. Разрывы по популяции / контексту
+- Географические: изучено в США / ЕС, но не в других регионах?
+- Демографические: взрослые, но не дети?
+- Доменные: медицина, но не право?
 
-### F. Contradictions
-- Opposing findings on same question
-- Unresolved theoretical debates
+### F. Противоречия
+- Противоположные результаты по одному и тому же вопросу
+- Неразрешённые теоретические дебаты
 
-OUTPUT per gap:
-- Gap description (1-2 sentences)
-- Evidence: what exists vs. what's missing (with paper counts)
-- Suggested research question
-- Feasibility: data availability, method needed
-- Impact: high/medium/low
-- Priority: 1 (most promising) to 3 (niche)
+Для каждого разрыва выведи:
+- Описание разрыва (1-2 предложения)
+- Доказательства: что есть и чего не хватает (с числом статей)
+- Предлагаемый исследовательский вопрос
+- Реализуемость: наличие данных, необходимый метод
+- Влияние: high / medium / low
+- Приоритет: 1 (наиболее перспективно) до 3 (нишево)
 ```
 
-## STEP 3: HTML Report (report subagent)
+## ШАГ 3: HTML-отчёт (субагент отчёта)
 
 ```
-File: reports/{date}-research-gap-{topic}.html
+Файл: reports/{date}-research-gap-{topic}.html
 
-SECTIONS:
-1. Executive Summary — top 5 gaps, prioritized
-2. Literature Landscape
-   - Chart.js line chart: papers per year
-   - Top venues table
-   - Key authors table
-   - Related concepts as tag cloud
-3. Gap Analysis
-   - Each gap as a card with evidence, questions, priority badge
-   - Color: red=high priority, yellow=medium, blue=niche
-4. Suggested Research Questions (numbered)
-5. Methodology Notes & Limitations
+РАЗДЕЛЫ:
+1. Краткое резюме — топ-5 разрывов, приоритеты
+2. Ландшафт литературы
+   - Линейный график Chart.js: статей по годам
+   - Таблица топовых журналов
+   - Таблица ключевых авторов
+   - Связанные понятия в виде облака тегов
+3. Анализ разрывов
+   - Каждый разрыв как карточка с доказательствами, вопросами, бейджем приоритета
+   - Цвета: красный = высокий приоритет, жёлтый = средний, синий = нишевый
+4. Предлагаемые исследовательские вопросы (нумерованный список)
+5. Методологические заметки и ограничения
 
-DESIGN: Tailwind CDN + Chart.js + Alpine.js
-Open with: open {file_path}
+ДИЗАЙН: Tailwind CDN + Chart.js + Alpine.js
+Открыть с помощью: open {file_path}
 ```
 
-## STEP 4: Next Actions
+## ШАГ 4: Следующие действия
 
-- "Deep-dive a specific gap? (/lit-search {gap topic})"
-- "Check if a gap was recently addressed?"
-- "Draft a research proposal outline for one of these gaps?"
+- "Глубже разобрать конкретный разрыв? (/lit-search {gap topic})"
+- "Проверить, не был ли этот разрыв закрыт недавно?"
+- "Составить план исследовательского предложения для одного из этих разрывов?"
 
-## API REFERENCE
+## СПРАВОЧНИК API
 
-### OpenAlex Group-By (trends)
+### OpenAlex Group-By (тренды)
 ```
 Papers per year: /works?search={topic}&group_by=publication_year
 By OA status: /works?search={topic}&group_by=open_access.is_oa
@@ -138,7 +138,7 @@ By type: /works?search={topic}&group_by=type
 
 ### OpenAlex Concepts
 ```
-/concepts?search={topic} → related concepts, works_count, description
+/concepts?search={topic} → связанные понятия, works_count, описание
 ```
 
 ### Semantic Scholar Recommendations
@@ -146,20 +146,20 @@ By type: /works?search={topic}&group_by=type
 /recommendations/v1/papers/forpaper/{paperId}?limit=20&fields=title,authors,year,citationCount,abstract
 ```
 
-## ERROR HANDLING
-- Topic too broad (>100K papers): ask user to narrow
-- Topic too narrow (0-5 papers): broaden, check spelling
-- Trend data gaps: note which years incomplete
-- Abstract coverage: not all papers have abstracts in API
+## ОБРАБОТКА ОШИБОК
+- Слишком широкий запрос темы (>100K статей): попроси сузить тему
+- Слишком узкий запрос (0-5 статей): расширь запрос, проверь орфографию
+- Пробелы в данных тренда: укажи, какие годы неполные
+- Покрытие аннотациями: не у всех статей в API есть abstract
 
-## TOKEN BUDGET
-- Main: ~3K (coordination)
-- Landscape subagent: ~25-40K
-- Gap analysis subagent: ~15-25K
-- Report subagent: ~10-15K
-- Total: ~55-85K (most intensive skill)
-- If landscape output too large: summarize before passing to gap analysis
+## БЮДЖЕТ ТОКЕНОВ
+- Основная сессия: ~3K (координация)
+- Субагент ландшафта: ~25-40K
+- Субагент анализа разрывов: ~15-25K
+- Субагент отчёта: ~10-15K
+- Итого: ~55-85K (самый ресурсоёмкий навык)
+- Если вывод ландшафта слишком большой: сначала сократи его перед передачей в анализ разрывов
 
-## REPORT DESIGN
-When writing the HTML report, follow the design system in /report-template EXACTLY.
-Do NOT use Tailwind CDN. Use the custom CSS variables, Crimson Pro font, and academic book aesthetic defined there.
+## ДИЗАЙН ОТЧЁТА
+При написании HTML-отчёта строго следуй дизайн-системе в /report-template.
+НЕ используй Tailwind CDN. Используй пользовательские CSS-переменные, шрифт Crimson Pro и академическую книжную эстетику, определённую там.

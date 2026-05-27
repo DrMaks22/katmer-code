@@ -1,149 +1,149 @@
 # KatmerCode
 
-Claude Code inside Obsidian — with academic research skills, inline diff editing, and MCP support.
+Claude Code внутри Obsidian — с навыками академического поиска, встроенным просмотром изменений и поддержкой MCP.
 
-[![Obsidian Plugin](https://img.shields.io/badge/Obsidian-Plugin-7C3AED?style=flat&logo=obsidian)](https://obsidian.md)
+[![Плагин Obsidian](https://img.shields.io/badge/Obsidian-Plugin-7C3AED?style=flat&logo=obsidian)](https://obsidian.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Desktop Only](https://img.shields.io/badge/platform-desktop%20only-orange)]()
+[![Только для десктопа](https://img.shields.io/badge/platform-desktop%20only-orange)]()
 
-An Obsidian plugin that integrates Claude Code as a sidebar chat panel. Built for researchers who write in Obsidian and want AI assistance for literature review, citation checking, manuscript editing, and peer review — without leaving their editor.
+Плагин Obsidian, который интегрирует Claude Code в виде боковой панели чата. Создан для исследователей, пишущих в Obsidian и нуждающихся в ИИ-помощи для обзора литературы, проверки цитирований, редактирования рукописей и академической рецензии, не покидая редактор.
 
-Ships with **7 academic research skills** that work as slash commands. **Desktop only** (requires Claude Code CLI).
+Поставляется с **7 академическими исследовательскими навыками**, работающими как slash-команды. **Только для десктопа** (требует Claude Code CLI).
 
-![Chat Panel](screenshots/chat-panel.png)
-
----
-
-## Quick Start
-
-1. Install Claude Code: `npm install -g @anthropic-ai/claude-code` then run `claude` to log in
-2. Clone and build: `git clone https://github.com/hkcanan/katmer-code.git && cd katmer-code && npm install && npm run build`
-3. Copy `main.js`, `manifest.json`, `styles.css` into `<your-vault>/.obsidian/plugins/katmer-code/`
-4. Enable **KatmerCode** in Obsidian → Settings → Community Plugins
-5. For academic skills: Settings → KatmerCode → toggle skills on + enable **Allow Web Requests**
+![Панель чата](screenshots/chat-panel.png)
 
 ---
 
-## What It Does
+## Быстрый старт
 
-- Runs Claude Code inside Obsidian (via [Agent SDK](https://docs.anthropic.com/en/docs/claude-code/sdk))
-- Edits your manuscripts with **inline diff** — word-level track changes in the editor (accept/undo)
-- Generates **HTML research reports** (peer review, citation analysis, gap analysis) viewable inside Obsidian
-- Connects to your **MCP servers** — any server configured in `~/.claude.json` works automatically
-- Supports `/compact`, tabs, session resume, streaming, and everything Claude Code terminal can do
-
----
-
-## Screenshots
-
-### Chat Panel
-![Chat](screenshots/chat-panel.png)
-*Text selection auto-attaches as context. Tool calls, thinking blocks, and streaming text in the sidebar.*
-
-### Inline Diff Editing
-![Diff](screenshots/inline-diff.png)
-*Word-level track changes — red strikethrough for removed text, green underline for additions. Accept (✓) or undo (✕).*
-
-### Peer Review Report
-![Report](screenshots/report-output.png)
-*`/peer-review` generates an HTML report with 8 criteria scores, radar chart, and detailed evaluation.*
-
-### Citation Verification & Missing References
-![Citations](screenshots/report-citations.png)
-*Claim-level verification with assessment badges. Missing references ranked by citation count and relevance.*
+1. Установите Claude Code: `npm install -g @anthropic-ai/claude-code`, затем выполните `claude`, чтобы войти
+2. Клонируйте и соберите проект: `git clone https://github.com/hkcanan/katmer-code.git && cd katmer-code && npm install && npm run build`
+3. Скопируйте `main.js`, `manifest.json`, `styles.css` в `<your-vault>/.obsidian/plugins/katmer-code/`
+4. Включите **KatmerCode** в Obsidian → Settings → Community Plugins
+5. Для академических навыков: Settings → KatmerCode → включите навыки и **Allow Web Requests**
 
 ---
 
-## Academic Skills
+## Что делает
 
-Enable from **Settings → KatmerCode → Academic Skills**. Each skill installs as a slash command.
+- Запускает Claude Code внутри Obsidian (через [Agent SDK](https://docs.anthropic.com/en/docs/claude-code/sdk))
+- Редактирует рукописи с **встроенным просмотром изменений**: отслеживание правок на уровне слов прямо в редакторе (принять/отменить)
+- Генерирует **HTML-отчёты для исследований** (академическая рецензия, анализ цитирований, анализ разрывов), которые можно просматривать в Obsidian
+- Подключается к вашим **MCP-серверам** — любой сервер, настроенный в `~/.claude.json`, работает автоматически
+- Поддерживает `/compact`, вкладки, возобновление сессии, потоковую передачу и всё, что умеет Claude Code в терминале
 
-> **A note on expectations:** These skills are research aids, not oracles. They query real academic databases (Semantic Scholar, CrossRef, OpenAlex, Unpaywall, arXiv, PubMed) and apply structured analysis — but the outputs are starting points, not final verdicts. A `/peer-review` report won't replace a human reviewer. A `/cite-verify` run may flag a valid reference as unverified if the database lacks coverage. The value is in surfacing things you might miss: a gap in the literature you hadn't considered, a highly-cited paper absent from your references, or a structural weakness in your argument that's easier to see when laid out in a table. Use the reports as a map, not as the territory.
+---
 
-### How the skills work
+## Скриншоты
 
-1. **You provide a manuscript** — either the active file, a file path, or selected text.
-2. **Claude reads and analyzes it** — parsing structure, extracting claims, identifying references.
-3. **APIs are queried** — the skill calls academic databases to cross-check, search, or enrich.
-4. **An HTML report is generated** — with tables, charts, and actionable findings.
-5. **The report opens in Obsidian** — or in your browser, your choice.
+### Панель чата
+![Чат](screenshots/chat-panel.png)
+*Выделенный текст автоматически прикрепляется как контекст. В боковой панели отображаются вызовы инструментов, блоки размышлений и потоковый текст.*
 
-For longer tasks (peer review with citation verification, research gap analysis), Claude uses **subagents** — parallel workers that handle different parts of the analysis simultaneously.
+### Встроенное отслеживание изменений
+![Изменения](screenshots/inline-diff.png)
+*Отслеживание правок на уровне слов: красное зачёркивание для удалённого текста, зелёное подчёркивание для добавлений. Принять (✓) или отменить (✕).*
 
-### Available skills
+### Отчёт рецензии
+![Отчёт](screenshots/report-output.png)
+*`/peer-review` генерирует HTML-отчёт с оценками по 8 критериям, радиальной диаграммой и подробной оценкой.*
 
-| Command | What it does | Typical use case |
+### Проверка цитат и недостающие источники
+![Цитаты](screenshots/report-citations.png)
+*Проверка утверждений на уровне высказываний с оценочными бейджами. Отсутствующие источники ранжируются по числу цитирований и релевантности.*
+
+---
+
+## Академические навыки
+
+Включается в **Settings → KatmerCode → Academic Skills**. Каждый навык устанавливается как slash-команда.
+
+> **Ожидания и оговорка:** эти навыки служат инструментами для исследования, а не оракулами. Они обращаются к реальным академическим базам данных (Semantic Scholar, CrossRef, OpenAlex, Unpaywall, arXiv, PubMed) и применяют структурированный анализ, но результаты следует считать отправной точкой, а не окончательным вердиктом. Отчёт `/peer-review` не заменит живого рецензента. Запуск `/cite-verify` может пометить корректный источник как неподтверждённый, если покрытие базы данных неполное. Их ценность в том, чтобы подсветить то, что легко упустить: разрыв в литературе, о котором вы не подумали, высокоцитируемую статью, отсутствующую в списке литературы, или структурную слабость аргумента, заметную только в табличном виде. Используйте отчёты как карту, а не как саму местность.
+
+### Как работают навыки
+
+1. **Вы предоставляете рукопись** — активный файл, путь к файлу или выделенный фрагмент.
+2. **Claude читает и анализирует её** — разбирает структуру, извлекает утверждения, определяет ссылки.
+3. **Выполняются запросы к API** — навык обращается к академическим базам данных для сверки, поиска и обогащения данных.
+4. **Генерируется HTML-отчёт** — с таблицами, графиками и практическими выводами.
+5. **Отчёт открывается в Obsidian** — или в браузере, по вашему выбору.
+
+Для более длинных задач (академическая рецензия с проверкой цитат, анализ исследовательских разрывов) Claude использует **субагентов** — параллельных исполнителей, которые одновременно обрабатывают разные части анализа.
+
+### Доступные навыки
+
+| Команда | Что делает | Типичный сценарий |
 |---------|-------------|-----------------|
-| `/peer-review` | Evaluates your manuscript across 8 criteria (originality, argument structure, literature coverage, methodology, etc.). Produces a radar chart and section-by-section feedback. | Before submitting: "What would a reviewer likely flag?" |
-| `/cite-verify` | Checks every reference against CrossRef, Semantic Scholar, and OpenAlex. Flags mismatches in author names, years, or titles. Tests whether cited claims are actually supported by the source. | After drafting: "Are my citations accurate?" |
-| `/lit-search` | Searches arXiv, Semantic Scholar, PubMed, and OpenAlex in parallel. Deduplicates results and ranks by relevance. | Starting a new project: "What's been published on X?" |
-| `/citation-network` | Builds an interactive citation graph (vis.js) showing who cites whom. Includes a timeline view. | Understanding a field: "How do these papers relate?" |
-| `/research-gap` | Identifies temporal, methodological, thematic, and application gaps in the literature. Scores each gap by feasibility and potential impact. | Planning research: "Where are the opportunities?" |
-| `/journal-match` | Analyzes your manuscript's reference profile and suggests target journals based on where your cited sources are published. | Ready to submit: "Which journal fits this paper?" |
-| `/abstract` | Generates abstracts in 5 formats: structured, narrative, graphical description, highlights, and social media summary. | Finalizing: "Write me a structured abstract." |
+| `/peer-review` | Оценивает рукопись по 8 критериям (оригинальность, структура аргумента, полнота литературы, методология и т. д.). Формирует радиальную диаграмму и постраничные замечания. | Перед отправкой: «Что рецензент, вероятнее всего, отметит?» |
+| `/cite-verify` | Проверяет каждую ссылку по CrossRef, Semantic Scholar и OpenAlex. Отмечает расхождения в фамилиях авторов, годах или названиях. Проверяет, действительно ли цитируемые утверждения поддерживаются источником. | После черновика: «Насколько точны мои цитаты?» |
+| `/lit-search` | Параллельно ищет в arXiv, Semantic Scholar, PubMed и OpenAlex. Устраняет дубликаты и ранжирует результаты по релевантности. | При запуске нового проекта: «Что уже опубликовано по X?» |
+| `/citation-network` | Строит интерактивный граф цитирования (vis.js), показывающий, кто кого цитирует. Включает временную шкалу. | Для понимания области: «Как связаны эти статьи?» |
+| `/research-gap` | Выявляет временные, методологические, тематические и прикладные разрывы в литературе. Оценивает каждый разрыв по реализуемости и потенциальному эффекту. | При планировании исследования: «Где есть возможности?» |
+| `/journal-match` | Анализирует профиль ссылок в рукописи и предлагает целевые журналы на основе того, где публикуются ваши источники. | Перед подачей: «Какой журнал лучше всего подходит для этой статьи?» |
+| `/abstract` | Генерирует аннотации в 5 форматах: структурированную, нарративную, графическое описание, highlights и краткое резюме для соцсетей. | На финальном этапе: «Напиши мне структурированную аннотацию.» |
 
-### Skill outputs
+### Результаты навыков
 
-#### `/cite-verify` — Citation verification
+#### `/cite-verify` — Проверка цитат
 ![Citation Verify](screenshots/cite-verify.png)
-*Each reference is checked against CrossRef, Semantic Scholar, and OpenAlex. Issues flagged with assessment badges — year errors, suspect citations, recommended fixes.*
+*Каждый источник проверяется по CrossRef, Semantic Scholar и OpenAlex. Проблемы помечаются оценочными бейджами — ошибки в годе, подозрительные цитаты, рекомендуемые исправления.*
 
-#### `/journal-match` — Journal recommendations
+#### `/journal-match` — Рекомендации журналов
 ![Journal Match](screenshots/journal-match-table.png)
-*Top 10 journals scored on scope, impact, audience, and acceptance. Current journal assessed with strengths/weaknesses.*
+*Топ-10 журналов оцениваются по охвату, влиянию, аудитории и вероятности принятия. Текущий журнал анализируется по сильным и слабым сторонам.*
 
 ![Journal Recommendation](screenshots/journal-match-recommendation.png)
-*Strategic recommendation with best option, strong alternative, and safe alternative — each with reasoning.*
+*Стратегическая рекомендация с лучшим вариантом, сильной альтернативой и надёжной альтернативой — для каждого варианта приводится обоснование.*
 
-#### `/research-gap` — Gap analysis
+#### `/research-gap` — Анализ разрывов
 ![Gap Matrix](screenshots/research-gap-matrix.png)
-*Gaps ranked by priority and impact. Evidence density shows how underexplored each area is.*
+*Разрывы ранжированы по приоритету и влиянию. Плотность доказательной базы показывает, насколько слабо исследована каждая область.*
 
 ![Gap Detail](screenshots/research-gap-detail.png)
-*Each gap includes evidence base, research question, feasibility assessment, and strategic note.*
+*Каждый разрыв включает базу доказательств, исследовательский вопрос, оценку реализуемости и стратегическую заметку.*
 
 ![Publication Trend](screenshots/research-gap-trend.png)
-*Publication trend chart shows field activity over time — useful for identifying emerging or declining areas.*
+*График публикационной динамики показывает активность области во времени — полезно для выявления зарождающихся или угасающих направлений.*
 
-### Report design
+### Дизайн отчётов
 
-All skills produce HTML reports with a shared design system:
-- **Crimson Pro** serif typography (academic book aesthetic)
-- **Chart.js** for radar charts, bar charts, timelines
-- **Alpine.js** for collapsible sections and interactive elements
-- Consistent color palette, table styles, and badge system across all report types
+Все навыки создают HTML-отчёты на основе общей дизайн-системы:
+- засечковая типографика **Crimson Pro** (эстетика академической книги)
+- **Chart.js** для радиальных диаграмм, столбчатых графиков и временных шкал
+- **Alpine.js** для сворачиваемых секций и интерактивных элементов
+- единая цветовая палитра, стили таблиц и система бейджей для всех типов отчётов
 
-Reports open inside Obsidian (iframe viewer) or in your default browser. A notification appears automatically when a new report is generated.
+Отчёты открываются внутри Obsidian (через просмотрщик iframe) или в браузере по умолчанию. При создании нового отчёта автоматически появляется уведомление.
 
-### A practical example
+### Практический пример
 
-Say you've drafted a paper on AI in legal reasoning. Here's one way to use the skills:
+Допустим, вы подготовили статью об ИИ в правовом мышлении. Вот один из способов использовать навыки:
 
-1. `/peer-review makaleler/demo-article.md` — get a structured evaluation before asking colleagues
-2. Review the radar chart — notice "Literature Coverage" scored low
-3. `/lit-search AI legal reasoning hermeneutics` — find papers you may have missed
-4. `/cite-verify makaleler/demo-article.md` — check that all 14 references are accurate
-5. `/journal-match makaleler/demo-article.md` — see which journals publish similar work
-6. Edit your manuscript based on the findings, then run `/peer-review` again
+1. `/peer-review makaleler/demo-article.md` — получите структурированную оценку до того, как спрашивать коллег
+2. Изучите радиальную диаграмму — обратите внимание, что «Literature Coverage» получила низкую оценку
+3. `/lit-search AI legal reasoning hermeneutics` — найдите статьи, которые могли ускользнуть от внимания
+4. `/cite-verify makaleler/demo-article.md` — проверьте, что все 14 ссылок корректны
+5. `/journal-match makaleler/demo-article.md` — посмотрите, какие журналы публикуют похожие работы
+6. Отредактируйте рукопись по результатам и затем снова запустите `/peer-review`
 
-No single run gives you a definitive answer. But each one shows you something you might not have seen on your own.
+Ни один отдельный запуск не даёт окончательного ответа. Но каждый из них показывает то, что вы могли бы не заметить самостоятельно.
 
 ---
 
-## Requirements
+## Требования
 
-- **Obsidian** 1.4.0+ (desktop only — macOS, Windows, or Linux)
-- **Claude Code CLI** installed and logged in
-- **Claude account** with API access
+- **Obsidian** 1.4.0+ (только десктоп — macOS, Windows или Linux)
+- **Claude Code CLI** установлен и авторизован
+- **Учётная запись Claude** с доступом к API
 
 ```bash
 npm install -g @anthropic-ai/claude-code
 claude  # log in once
 ```
 
-## Installation
+## Установка
 
-### Build from source
+### Сборка из исходников
 
 ```bash
 git clone https://github.com/hkcanan/katmer-code.git
@@ -152,44 +152,44 @@ npm install
 npm run build
 ```
 
-This produces three files in the project root: `main.js`, `manifest.json`, and `styles.css`.
+В корне проекта будут созданы три файла: `main.js`, `manifest.json` и `styles.css`.
 
-Copy all three into your vault:
+Скопируйте все три файла в ваш vault:
 
 ```bash
 mkdir -p <your-vault>/.obsidian/plugins/katmer-code
 cp main.js manifest.json styles.css <your-vault>/.obsidian/plugins/katmer-code/
 ```
 
-Then enable **KatmerCode** in Obsidian → Settings → Community Plugins.
+Затем включите **KatmerCode** в Obsidian → Settings → Community Plugins.
 
 ---
 
-## Configuration
+## Настройка
 
-| Setting | Default | Description |
+| Параметр | Значение по умолчанию | Описание |
 |---------|---------|-------------|
-| CLI Path | `claude` | Auto-detected. Set manually if needed. |
-| Working Directory | vault root | Where Claude sessions run. |
-| Default Model | Sonnet | Opus, Opus 1M, Sonnet, or Haiku |
-| Permission Mode | Accept Edits | Auto-approve file edits only |
-| Allow Web Requests | Off | Needed for academic skills (enables WebFetch, WebSearch, curl) |
+| Путь к CLI | `claude` | Определяется автоматически. При необходимости задайте вручную. |
+| Рабочий каталог | vault root | Где запускаются сессии Claude. |
+| Модель по умолчанию | Sonnet | Opus, Opus 1M, Sonnet или Haiku |
+| Режим разрешений | Accept Edits | Автоматически подтверждает только правки файлов |
+| Разрешить веб-запросы | Off | Нужно для академических навыков (включает WebFetch, WebSearch, curl) |
 
-### MCP Servers (optional)
+### MCP-серверы (необязательно)
 
-The plugin inherits MCP servers from your Claude Code config (`~/.claude.json`). Nothing extra to configure — if you've set up MCP servers for your terminal Claude Code, they work here too.
+Плагин наследует MCP-серверы из вашей конфигурации Claude Code (`~/.claude.json`). Дополнительно ничего настраивать не нужно — если MCP-серверы уже настроены для терминального Claude Code, они будут работать и здесь.
 
-These are **not required** but can speed up academic skills if installed:
+Они **не обязательны**, но при установке могут ускорить академические навыки:
 
-- [paper-search-mcp](https://github.com/openags/paper-search-mcp) — 20+ academic databases in one server
-- [arxiv-mcp-server](https://github.com/blazickjp/arxiv-mcp-server) — arXiv with full-text PDF reading
-- [openalex-research-mcp](https://github.com/oksure/openalex-research-mcp) — Citation analysis, trends, journal quality
+- [paper-search-mcp](https://github.com/openags/paper-search-mcp) — 20+ академических баз данных в одном сервере
+- [arxiv-mcp-server](https://github.com/blazickjp/arxiv-mcp-server) — arXiv с чтением полного текста PDF
+- [openalex-research-mcp](https://github.com/oksure/openalex-research-mcp) — анализ цитирований, трендов и качества журналов
 
-Without MCP servers, skills use WebFetch to call APIs directly. This works fine — MCP servers just make it faster and use fewer tokens.
+Без MCP-серверов навыки напрямую вызывают API через WebFetch. Это тоже работает нормально — MCP-серверы лишь ускоряют процесс и расходуют меньше токенов.
 
 ---
 
-## How It Works
+## Как это работает
 
 ```
 Obsidian
@@ -202,14 +202,14 @@ Obsidian
 └── Report Viewer (iframe)
 ```
 
-Skills are `.md` prompt files installed to `~/.claude/commands/` when you enable them in settings. They work both in the plugin and in your terminal.
+Навыки представляют собой `.md` prompt-файлы, которые устанавливаются в `~/.claude/commands/`, когда вы включаете их в настройках. Они работают и в плагине, и в терминале.
 
 ---
 
-## License
+## Лицензия
 
 [MIT](LICENSE)
 
-## Contributing
+## Вклад
 
-Issues and PRs welcome. This is a side project — built by a researcher, for researchers.
+Issues и PR приветствуются. Это побочный проект — создан исследователем для исследователей.

@@ -1,143 +1,143 @@
-Perform an academic peer review of "$ARGUMENTS".
+Проведи академическую рецензию для "$ARGUMENTS".
 
-Resolve file path:
-- Filename only: look in current working directory
-- Full path: use as-is
-- .docx: extract text with `pandoc -t plain "$ARGUMENTS"` first
+Определи путь к файлу:
+- Если указан только filename: ищи в текущем рабочем каталоге
+- Если указан полный путь: используй как есть
+- Если это .docx: сначала извлеки текст через `pandoc -t plain "$ARGUMENTS"`
 
-## MAIN FLOW
+## ОСНОВНОЙ ПОТОК
 
 ```
-Main Session — coordination only, does NOT read the manuscript
+Основная сессия — только координация, рукопись НЕ читает
   │
-  ├── 1a. Subagent → read manuscript + evaluate 8 criteria (parallel)
-  ├── 1b. Subagent → search for missing references via public APIs (parallel)
+  ├── 1a. Субагент → прочитать рукопись + оценить 8 критериев (параллельно)
+  ├── 1b. Субагент → найти недостающие источники через публичные API (параллельно)
   │
-  └── 2. Report subagent → combine 1a + 1b → HTML report + open
+  └── 2. Субагент отчёта → объединить 1a + 1b → HTML-отчёт + открыть
 ```
 
-1a and 1b run IN PARALLEL. Main session stays clean.
+1a и 1b выполняются ПАРАЛЛЕЛЬНО. Основная сессия остаётся чистой.
 
-## STEP 1a: Manuscript Evaluation (subagent)
+## ШАГ 1a: Оценка рукописи (субагент)
 
-Launch subagent. Prompt:
-
-```
-TASK: Evaluate this manuscript to peer-review standards.
-FILE: {file_path}
-
-Read with Read tool. Analyze:
-
-### STRUCTURAL ANALYSIS
-- Title, author(s), section count, estimated word count
-- Reference/footnote count and distribution across sections
-- Clear thesis statement in introduction?
-- Conclusion aligns with introductory promises?
-- Abstract present and accurate?
-
-### 8 CRITERIA (each: 1-5 score + justification + specific suggestion)
-
-K1 ORIGINALITY: What does this contribute? Novel argument, new data, synthesis?
-K2 ARGUMENT STRUCTURE: Thesis clear? Logical chain coherent? Repetition?
-K3 LITERATURE COVERAGE: Source base adequate? Primary/secondary balance? Currency?
-    Are key works in the field missing? Check by searching Semantic Scholar for the topic.
-K4 DEPTH OF DISCUSSION: Counterarguments fairly represented? Author takes position?
-    Is there genuine engagement with opposing views, or just listing them?
-    Does the author clearly distinguish their own position from others'?
-K5 CONCEPTUAL CONSISTENCY: Terminology consistent? Translations correct?
-    If multilingual: are foreign-language terms used consistently with standard equivalents?
-K6 METHODOLOGY: Method stated? Source/data selection justified?
-K7 PRESENTATION: Academic language, paragraph lengths, footnote/text balance?
-K8 EVIDENCE: Claims supported? Unsupported assertions?
-
-### STRENGTHS (5-6 items, specific)
-### AREAS FOR IMPROVEMENT (5-6 items, each with concrete suggestion)
-### SECTION-BY-SECTION NOTES (1-2 sentences per section)
-
-### CITATION SPOT-CHECK (pick 5 key claims)
-For 5 central claims that rely heavily on a citation:
-- Does the cited source actually support what the manuscript says?
-- Is the author citing someone's own view, or their report of another's view?
-- Any signs of overstatement, misattribution, or approval/critique confusion?
-(This is a quick sample — full verification via /cite-verify)
-
-### RECOMMENDATION: Accept / Minor revisions / Major revisions / Reject
-
-OUTPUT: Plain text with tables. Also list all cited authors/works.
-```
-
-## STEP 1b: Missing Reference Detection (subagent, parallel)
-
-Launch subagent. Prompt:
+Запусти субагента. Промпт:
 
 ```
-TASK: Find potentially missing references for a manuscript about "{topic}".
+ЗАДАЧА: Оцени эту рукопись по стандартам академической рецензии.
+ФАЙЛ: {file_path}
 
-EXISTING AUTHORS: {list from 1a or grep from main session}
+Прочитай файл с помощью инструмента Read. Проанализируй:
 
-Search these PUBLIC APIs using WebFetch:
+### СТРУКТУРНЫЙ АНАЛИЗ
+- Заголовок, автор(ы), число разделов, оценка объёма в словах
+- Число ссылок / сносок и их распределение по разделам
+- Есть ли чёткий тезис во введении?
+- Соответствует ли заключение обещаниям, данным во введении?
+- Есть ли аннотация и точна ли она?
 
-### Semantic Scholar (no auth needed)
+### 8 КРИТЕРИЕВ (для каждого: оценка 1-5 + обоснование + конкретное предложение)
+
+K1 ОРИГИНАЛЬНОСТЬ: Что именно добавляет работа? Новый аргумент, новые данные, синтез?
+K2 СТРУКТУРА АРГУМЕНТА: Ясен ли тезис? Логична ли цепочка рассуждения? Есть ли повторения?
+K3 ОХВАТ ЛИТЕРАТУРЫ: Достаточна ли база источников? Баланс первичных / вторичных источников? Актуальность?
+    Не пропущены ли ключевые работы в поле? Проверь это, поискав тему в Semantic Scholar.
+K4 ГЛУБИНА ОБСУЖДЕНИЯ: Достаточно ли представлены контраргументы? Автор занимает позицию?
+    Есть ли настоящее взаимодействие с оппонентами или только их перечисление?
+    Чётко ли автор отделяет собственную позицию от чужой?
+K5 КОНЦЕПТУАЛЬНАЯ ПОСЛЕДОВАТЕЛЬНОСТЬ: Терминология последовательна? Переводы корректны?
+    Если работа многоязычная: используются ли иностранные термины согласованно и в соответствии со стандартными эквивалентами?
+K6 МЕТОДОЛОГИЯ: Описан ли метод? Обоснован ли отбор источников / данных?
+K7 ПРЕЗЕНТАЦИЯ: Академический язык, длина абзацев, баланс сносок и основного текста?
+K8 ДОКАЗАТЕЛЬНОСТЬ: Подтверждены ли утверждения? Есть ли неподтверждённые заявления?
+
+### СИЛЬНЫЕ СТОРОНЫ (5-6 пунктов, конкретно)
+### ОБЛАСТИ ДЛЯ УЛУЧШЕНИЯ (5-6 пунктов, каждый с конкретной рекомендацией)
+### ЗАМЕТКИ ПО РАЗДЕЛАМ (по 1-2 предложения на раздел)
+
+### ПРИЦЕЛЬНАЯ ПРОВЕРКА ЦИТАТ (выбери 5 ключевых утверждений)
+Для 5 центральных утверждений, которые сильно зависят от ссылки:
+- Действительно ли цитируемый источник поддерживает то, что утверждает рукопись?
+- Цитирует ли автор собственную позицию источника или пересказывает чужую?
+- Есть ли признаки преувеличения, неверной атрибуции или путаницы между одобрением и критикой?
+(Это быстрый выборочный контроль — полная проверка выполняется через /cite-verify)
+
+### РЕКОМЕНДАЦИЯ: Принять / Незначительные правки / Существенные правки / Отклонить
+
+ВЫХОД: Обычный текст с таблицами. Также перечисли всех цитируемых авторов / работы.
+```
+
+## ШАГ 1b: Обнаружение недостающих источников (субагент, параллельно)
+
+Запусти субагента. Промпт:
+
+```
+ЗАДАЧА: Найди потенциально недостающие источники для рукописи о "{topic}".
+
+СУЩЕСТВУЮЩИЕ АВТОРЫ: {list from 1a or grep from main session}
+
+Ищи по этим ПУБЛИЧНЫМ API с помощью WebFetch:
+
+### Semantic Scholar (без авторизации)
 WebFetch: https://api.semanticscholar.org/graph/v1/paper/search?query={query}&limit=20&fields=title,authors,year,venue,citationCount,abstract,externalIds
 
-Run 3-5 query variants (different angles on the topic).
+Запусти 3-5 вариантов запроса (разные углы темы).
 
-### OpenAlex (no auth, add mailto=)
+### OpenAlex (без авторизации, добавь mailto=)
 WebFetch: https://api.openalex.org/works?search={query}&per_page=20&sort=cited_by_count:desc&mailto=katmercode@example.com
 
-### CrossRef (no auth)
+### CrossRef (без авторизации)
 WebFetch: https://api.crossref.org/works?query={query}&rows=10&sort=relevance
 
-PROCESS:
-1. Generate 3-5 search queries from topic (core, broader, methodological, recent)
-2. Search all three APIs per query
-3. Deduplicate by DOI or title similarity
-4. Filter out works already cited in manuscript
-5. Rank by citation count × relevance
-6. Return top 15 missing references
+ПРОЦЕСС:
+1. Сгенерируй 3-5 поисковых запросов из темы (ядро, шире, методология, недавние)
+2. Ищи по всем трём API для каждого запроса
+3. Устраняй дубликаты по DOI или сходству названий
+4. Исключай работы, уже упомянутые в рукописи
+5. Ранжируй по числу цитирований × релевантности
+6. Верни топ-15 недостающих источников
 
-OUTPUT:
+ВЫХОД:
 | # | Author(s) | Title | Venue/Year | Citations | Why Relevant |
 ```
 
-## STEP 2: HTML Report (subagent)
+## ШАГ 2: HTML-отчёт (субагент)
 
-Combine 1a + 1b results. Write HTML report:
+Объедини результаты 1a + 1b. Запиши HTML-отчёт:
 
 ```
-File: reports/{date}-peer-review-{manuscript-name}.html
+Файл: reports/{date}-peer-review-{manuscript-name}.html
 
-DESIGN:
+ДИЗАЙН:
 - Tailwind CDN + Chart.js
-- Radar chart for 8 criteria scores
-- Color-coded scores: green (4-5), yellow (3), red (1-2)
-- Collapsible sections (details/summary)
-- Missing references table
-- Print-friendly
+- Радиальная диаграмма по 8 критериям
+- Цветовая шкала: зелёный (4-5), жёлтый (3), красный (1-2)
+- Сворачиваемые секции (детали / сводка)
+- Таблица недостающих источников
+- Пригодно для печати
 
-Open with: open {file_path}
+Открыть с помощью: open {file_path}
 ```
 
-## STEP 3: Next Actions
+## ШАГ 3: Следующие действия
 
-Ask user:
-- "Verify citations? (/cite-verify {file})"
-- "Search literature on specific gaps? (/lit-search {topic})"
-- "Generate abstract? (/abstract {file})"
+Спроси пользователя:
+- "Проверить цитаты? (/cite-verify {file})"
+- "Искать литературу по конкретным разрывам? (/lit-search {topic})"
+- "Сгенерировать аннотацию? (/abstract {file})"
 
-## ERROR HANDLING
-- 429 rate limit: wait 60s, retry once
-- 0 API results: broaden query terms
-- API down: skip, note in report
-- .docx without pandoc: tell user to install or convert to .md
+## ОБРАБОТКА ОШИБОК
+- Ограничение 429: подожди 60 секунд, повтори один раз
+- 0 результатов API: расширь поисковые термины
+- API недоступен: пропусти, отметь в отчёте
+- .docx без pandoc: скажи пользователю установить его или конвертировать в .md
 
-## TOKEN BUDGET
-- Main: ~2K (coordination)
-- 1a subagent: ~15-30K (manuscript + evaluation)
-- 1b subagent: ~10-20K (API calls + dedup)
-- Report subagent: ~5-10K
-- Total: ~35-60K
+## БЮДЖЕТ ТОКЕНОВ
+- Основная сессия: ~2K (координация)
+- Субагент 1a: ~15-30K (рукопись + оценка)
+- Субагент 1b: ~10-20K (API-вызовы + дедупликация)
+- Субагент отчёта: ~5-10K
+- Итого: ~35-60K
 
-## REPORT DESIGN
-When writing the HTML report, follow the design system in /report-template EXACTLY.
-Do NOT use Tailwind CDN. Use the custom CSS variables, Crimson Pro font, and academic book aesthetic defined there.
+## ДИЗАЙН ОТЧЁТА
+При написании HTML-отчёта строго следуй дизайн-системе в /report-template.
+НЕ используй Tailwind CDN. Используй пользовательские CSS-переменные, шрифт Crimson Pro и академическую книжную эстетику, определённую там.

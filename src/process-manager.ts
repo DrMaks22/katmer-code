@@ -13,6 +13,7 @@ import type {
   RateLimitEvent,
   StreamDeltaEvent,
 } from "./types";
+import { t } from "./i18n";
 
 import { query as sdkQuery } from "@anthropic-ai/claude-agent-sdk";
 import type {
@@ -289,7 +290,7 @@ export class ProcessManager {
       }
 
       if (!child.stdin || !child.stdout) {
-        throw new Error("Failed to create process streams");
+        throw new Error(t("process.error.failedToCreateStreams"));
       }
 
       // Cast ChildProcess directly — it satisfies SpawnedProcess interface
@@ -346,8 +347,8 @@ export class ProcessManager {
         const signal = opts.signal;
         try {
           const result = await new Promise<"allow" | "deny" | "always">((resolve, reject) => {
-            if (signal?.aborted) { reject(new Error("Aborted")); return; }
-            const onAbort = () => reject(new Error("Aborted"));
+            if (signal?.aborted) { reject(new Error(t("process.permission.aborted"))); return; }
+            const onAbort = () => reject(new Error(t("process.permission.aborted")));
             signal?.addEventListener("abort", onAbort, { once: true });
             this.onPermissionRequest!({
               toolName,
@@ -366,9 +367,9 @@ export class ProcessManager {
               updatedPermissions: result === "always" ? opts.suggestions : undefined,
             };
           }
-          return { behavior: "deny" as const, message: "User denied" };
+          return { behavior: "deny" as const, message: t("process.permission.userDenied") };
         } catch {
-          return { behavior: "deny" as const, message: "Aborted" };
+          return { behavior: "deny" as const, message: t("process.permission.aborted") };
         }
       } : undefined,
     };
@@ -404,7 +405,7 @@ export class ProcessManager {
     const cliPath = this.getCliPath();
     if (!cliPath) {
       console.error("[katmer-code] Claude CLI not found");
-      this.onStderr?.("Claude Code CLI not found. Install it with: npm install -g @anthropic-ai/claude-code");
+      this.onStderr?.(t("process.error.cliNotFound"));
       this.setState("error");
       this.onComplete?.();
       return false;
@@ -446,7 +447,7 @@ export class ProcessManager {
         const errMsg = err instanceof Error ? err.message : String(err);
         console.error("[katmer-code] SDK event loop error:", errMsg);
         if (errMsg.includes("not logged in") || errMsg.includes("authenticate") || errMsg.includes("API key")) {
-          this.onStderr?.("Not logged in. Please run `claude` in your terminal first to authenticate.");
+          this.onStderr?.(t("chat.error.notLoggedIn"));
         }
         this.setState("error");
         this.onComplete?.();

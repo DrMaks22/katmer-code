@@ -1,81 +1,81 @@
-Search academic literature for "$ARGUMENTS".
+Проведи поиск академической литературы по "$ARGUMENTS".
 
-Do NOT use subagents — do this yourself directly.
+НЕ используй субагентов — выполни это самостоятельно.
 
-## STEP 1: Generate Search Queries
+## ШАГ 1: Сформируй поисковые запросы
 
-From "$ARGUMENTS", generate 3-5 search variants:
-- Original query as-is
-- Synonyms / related terms
-- Broader category
-- More specific sub-topic
-- If non-English: English equivalent too
+На основе "$ARGUMENTS" создай 3-5 вариантов запроса:
+- Исходный запрос без изменений
+- Синонимы / связанные термины
+- Более широкая категория
+- Более узкая подтема
+- Если запрос не на английском: добавь английский эквивалент
 
-## STEP 2: Detect Discipline
+## ШАГ 2: Определи дисциплину
 
-Infer from query keywords:
-- Medical/bio terms → include PubMed
-- CS/math/physics → include arXiv
-- Social sciences/humanities → Semantic Scholar + OpenAlex only
-- Unclear → search Semantic Scholar + OpenAlex (always)
+Выведи её из ключевых слов запроса:
+- Медицинские / биомедицинские термины → добавь PubMed
+- CS / math / physics → добавь arXiv
+- Социальные науки / гуманитарные науки → только Semantic Scholar + OpenAlex
+- Неясно → всегда ищи в Semantic Scholar + OpenAlex
 
-## STEP 3: Search APIs (parallel WebFetch calls)
+## ШАГ 3: Поиск по API (параллельные вызовы WebFetch)
 
-### Semantic Scholar (always)
+### Semantic Scholar (всегда)
 ```
 WebFetch: https://api.semanticscholar.org/graph/v1/paper/search?query={query}&limit=20&fields=title,authors,year,venue,citationCount,abstract,externalIds,openAccessPdf
 ```
 
-### OpenAlex (always)
+### OpenAlex (всегда)
 ```
 WebFetch: https://api.openalex.org/works?search={query}&per_page=20&sort=cited_by_count:desc&mailto=katmercode@example.com
 ```
 
-### PubMed (biomedical only)
+### PubMed (только для биомедицины)
 ```
 WebFetch: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={query}&retmax=20&retmode=json
-Then: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id={pmid_list}&retmode=json
+Затем: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id={pmid_list}&retmode=json
 ```
 
-### arXiv (CS/math/physics only)
+### arXiv (только для CS / math / physics)
 ```
 WebFetch: https://export.arxiv.org/api/query?search_query=all:{query}&max_results=20&sortBy=relevance
 ```
-Response is Atom XML — parse `<entry>` elements.
+Ответ приходит в виде Atom XML — разбирай элементы `<entry>`.
 
-## STEP 4: Deduplicate and Merge
+## ШАГ 4: Устрани дубликаты и объедини записи
 
-1. Normalize DOIs (lowercase, strip URL prefix)
-2. Group by DOI — keep richest metadata
-3. No DOI: fuzzy match by title (>80% similarity)
-4. Keep one record per paper
+1. Нормализуй DOI (в нижний регистр, убери URL-префикс)
+2. Группируй по DOI — сохраняй наиболее полные метаданные
+3. Если DOI нет: выполняй нечёткое сопоставление по названию (>80% сходства)
+4. Оставляй по одной записи на каждую статью
 
-## STEP 5: Rank and Present
+## ШАГ 5: Отранжируй и представь результаты
 
-Sort by: relevance score × log(citationCount + 1)
+Сортируй по: релевантность × log(citationCount + 1)
 
-Display:
+Отображай:
 
 | # | Authors | Title | Year | Venue | Cites | DOI | OA |
 |---|---------|-------|------|-------|-------|-----|----|
 | 1 | Smith, Jones | Deep learning for... | 2023 | Nature | 1,204 | 10.1038/... | PDF |
 
-Show top 20. For each with abstract, show first 100 words.
+Покажи топ-20. Для каждой записи с аннотацией выведи первые 100 слов.
 
-## STEP 6: Offer Next Actions
+## ШАГ 6: Предложи следующие действия
 
-- "Expand any of these? I can fetch full details + references."
-- "Build a citation network? (/citation-network DOI1 DOI2)"
-- "Generate a literature review outline from these?"
-- "Save results to file? (markdown table)"
+- "Развернуть любую из этих записей? Я могу получить полные сведения + список ссылок."
+- "Построить сеть цитирования? (/citation-network DOI1 DOI2)"
+- "Сгенерировать по ним план обзора литературы?"
+- "Сохранить результаты в файл? (markdown table)"
 
-## ERROR HANDLING
-- 429: wait 60s, retry. If persistent, skip that API.
-- 0 results on all APIs: suggest broader terms
-- Non-Latin script: try transliterated version
-- arXiv XML parse error: skip, note in output
+## ОБРАБОТКА ОШИБОК
+- 429: подожди 60 секунд и повтори. Если ошибка сохраняется, пропусти этот API.
+- 0 результатов во всех API: предложи более общие термины
+- Не-латинский алфавит: попробуй транслитерацию
+- Ошибка разбора XML arXiv: пропусти, отметь в выводе
 
-## TOKEN BUDGET
-- Direct execution (no subagent): ~15-25K total
-- API responses: ~1-2K per call
-- Abstract display: ~5K if all 20 shown
+## БЮДЖЕТ ТОКЕНОВ
+- Прямое выполнение (без субагента): ~15-25K всего
+- Ответы API: ~1-2K на вызов
+- Показ аннотаций: ~5K, если вывести все 20

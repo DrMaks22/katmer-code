@@ -1,5 +1,6 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
 import { readFileSync } from "fs";
+import { t } from "./i18n";
 
 export const VIEW_TYPE_REPORT = "katmer-report-view";
 
@@ -13,7 +14,7 @@ export class ReportView extends ItemView {
   }
 
   getViewType(): string { return VIEW_TYPE_REPORT; }
-  getDisplayText(): string { return this.fileName || "Report"; }
+  getDisplayText(): string { return this.fileName || t("report.view.title"); }
   getIcon(): string { return "file-chart"; }
 
   async onOpen(): Promise<void> {
@@ -30,7 +31,7 @@ export class ReportView extends ItemView {
 
   loadReport(filePath: string): void {
     this.filePath = filePath;
-    this.fileName = filePath.split("/").pop() || "Report";
+    this.fileName = filePath.split("/").pop() || t("report.view.title");
     (this.leaf as WorkspaceLeaf & { updateHeader?: () => void }).updateHeader?.();
     try {
       const content = readFileSync(filePath, "utf-8");
@@ -40,7 +41,7 @@ export class ReportView extends ItemView {
       container.empty();
       container.createEl("div", {
         cls: "katmer-report-error",
-        text: "Could not load: " + filePath,
+        text: t("report.view.errorLoad", { filePath }),
       });
     }
   }

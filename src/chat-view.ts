@@ -25,7 +25,8 @@ import type {
   EffortLevel,
   SavedSession,
 } from "./types";
-import { MODEL_LABELS, EFFORT_LABELS, SKILL_CATALOG } from "./types";
+import { MODEL_LABEL_KEYS, MODEL_DESCRIPTION_KEYS, EFFORT_LABEL_KEYS, SKILL_CATALOG } from "./types";
+import { formatCount, getLocale, t } from "./i18n";
 
 /** Get file path from Electron webUtils or legacy File.path */
 function getFilePathFromFile(f: File): string | undefined {
@@ -36,6 +37,18 @@ function getFilePathFromFile(f: File): string | undefined {
   } catch {
     return (f as File & { path?: string }).path;
   }
+}
+
+function formatShortDuration(totalSeconds: number): string {
+  const locale = getLocale();
+  const min = Math.floor(totalSeconds / 60);
+  const sec = totalSeconds % 60;
+  if (locale === "ru") {
+    if (min > 0) return `${min}м ${sec}с`;
+    return `${sec}с`;
+  }
+  if (min > 0) return `${min}m ${sec}s`;
+  return `${sec}s`;
 }
 
 export const VIEW_TYPE_CLAUDE = "claude-native-chat";
@@ -154,7 +167,7 @@ export class ClaudeChatView extends ItemView {
       if (!ignore.some(w => text.includes(w))) {
         // Check for auth/login errors
         if (text.includes("not logged in") || text.includes("authenticate") || text.includes("API key") || text.includes("unauthorized")) {
-          this.showError("Not logged in. Please run `claude` in your terminal first to authenticate, then reload this plugin.");
+          this.showError(t("chat.error.notLoggedIn"));
         } else if (text.includes("Prompt is too long") || text.includes("prompt is too long") || text.includes("context_length_exceeded")) {
           this.showContextFullError();
         } else {
@@ -184,7 +197,7 @@ export class ClaudeChatView extends ItemView {
     // History button
     const historyBtn = controls.createEl("button", {
       cls: "claude-native-btn",
-      attr: { "aria-label": "Session history" },
+      attr: { "aria-label": t("chat.header.historyAria") },
     });
     setIcon(historyBtn, "history");
     historyBtn.addEventListener("click", () => {
@@ -194,14 +207,14 @@ export class ClaudeChatView extends ItemView {
     // New session button
     this.newSessionBtn = controls.createEl("button", {
       cls: "claude-native-btn",
-      attr: { "aria-label": "New session" },
+      attr: { "aria-label": t("chat.header.newSessionAria") },
     });
     setIcon(this.newSessionBtn, "plus");
     this.newSessionBtn.addEventListener("click", () => this.addNewTab());
 
     this.abortBtn = controls.createEl("button", {
       cls: "claude-native-btn claude-native-btn-abort",
-      attr: { "aria-label": "Stop" },
+      attr: { "aria-label": t("chat.header.stopAria") },
     });
     setIcon(this.abortBtn, "square");
     this.abortBtn.addEventListener("click", () => this.pm.abort());
@@ -218,7 +231,7 @@ export class ClaudeChatView extends ItemView {
     this.contextLabel = contextRow.createSpan({ cls: "claude-native-context-label", text: "" });
 
     this.statusBar = header.createDiv("claude-native-status");
-    this.statusBar.textContent = "Checking CLI…";
+    this.statusBar.textContent = t("chat.status.checkingCli");
 
     // ── Chat area ──
     this.chatContainer = container.createDiv("claude-native-chat");
@@ -230,13 +243,13 @@ export class ClaudeChatView extends ItemView {
     this.emptyState = this.chatContainer.createDiv("claude-native-empty");
     this.emptyState.empty();
     this.emptyState.createDiv({ cls: "claude-native-empty-title", text: "KatmerCode" });
-    this.emptyState.createDiv({ cls: "claude-native-empty-subtitle", text: "Checking Claude Code CLI\u2026" });
+    this.emptyState.createDiv({ cls: "claude-native-empty-subtitle", text: t("chat.status.checkingCli") });
 
     // ── Diff bar — above input, visible when pending changes exist ──
     this.diffBar = container.createDiv("cc-diff-bar");
     this.diffBar.addClass("is-hidden");
     {
-      const prevBtn = this.diffBar.createEl("button", { cls: "cc-diffbar-btn", attr: { "aria-label": "Previous" } });
+      const prevBtn = this.diffBar.createEl("button", { cls: "cc-diffbar-btn", attr: { "aria-label": t("chat.diff.prevAria") } });
       setIcon(prevBtn, "chevron-left");
       prevBtn.addEventListener("click", () => {
         const cmView = this.getEditorForFile(this.diffBarFilePath);
@@ -245,7 +258,7 @@ export class ClaudeChatView extends ItemView {
 
       this.diffBarLabel = this.diffBar.createSpan({ cls: "cc-diffbar-label", text: "" });
 
-      const nextBtn = this.diffBar.createEl("button", { cls: "cc-diffbar-btn", attr: { "aria-label": "Next" } });
+      const nextBtn = this.diffBar.createEl("button", { cls: "cc-diffbar-btn", attr: { "aria-label": t("chat.diff.nextAria") } });
       setIcon(nextBtn, "chevron-right");
       nextBtn.addEventListener("click", () => {
         const cmView = this.getEditorForFile(this.diffBarFilePath);
@@ -254,7 +267,7 @@ export class ClaudeChatView extends ItemView {
 
       this.diffBar.createDiv("cc-diffbar-spacer");
 
-      const acceptBtn = this.diffBar.createEl("button", { cls: "cc-diffbar-btn cc-diffbar-accept", text: "✓ accept" });
+      const acceptBtn = this.diffBar.createEl("button", { cls: "cc-diffbar-btn cc-diffbar-accept", text: t("chat.diff.accept") });
       acceptBtn.addEventListener("click", () => {
         const cmView = this.getEditorForFile(this.diffBarFilePath);
         if (cmView) {
@@ -269,7 +282,7 @@ export class ClaudeChatView extends ItemView {
         }
       });
 
-      const rejectBtn = this.diffBar.createEl("button", { cls: "cc-diffbar-btn cc-diffbar-reject", text: "✕ undo" });
+      const rejectBtn = this.diffBar.createEl("button", { cls: "cc-diffbar-btn cc-diffbar-reject", text: t("chat.diff.reject") });
       rejectBtn.addEventListener("click", () => {
         const cmView = this.getEditorForFile(this.diffBarFilePath);
         if (cmView) {
@@ -283,7 +296,7 @@ export class ClaudeChatView extends ItemView {
         }
       });
 
-      const acceptAllBtn = this.diffBar.createEl("button", { cls: "cc-diffbar-btn cc-diffbar-accept-all", text: "✓ all" });
+      const acceptAllBtn = this.diffBar.createEl("button", { cls: "cc-diffbar-btn cc-diffbar-accept-all", text: t("chat.diff.acceptAll") });
       acceptAllBtn.addEventListener("click", () => {
         const cmView = this.getEditorForFile(this.diffBarFilePath);
         if (cmView) { acceptAllChanges(cmView); this.refreshDiffBar(); }
@@ -304,19 +317,19 @@ export class ClaudeChatView extends ItemView {
     // Textarea
     this.inputEl = inputBox.createEl("textarea", {
       cls: "cc-textarea",
-      attr: { placeholder: "Type / for skills", rows: "1" },
+      attr: { placeholder: t("chat.input.placeholder"), rows: "1" },
     });
 
     // Bottom row inside the box: [+] ........... [Sonnet ∨] [↑]
     const bottomRow = inputBox.createDiv("cc-bottom-row");
 
     // Attach file (any type — images, docs, etc.)
-    const attachBtn = bottomRow.createEl("button", { cls: "cc-icon-btn", attr: { "aria-label": "Attach file" } });
+    const attachBtn = bottomRow.createEl("button", { cls: "cc-icon-btn", attr: { "aria-label": t("chat.attach.aria") } });
     setIcon(attachBtn, "paperclip");
     attachBtn.addEventListener("click", () => this.pickFile());
 
     // Skills button — opens the skill popup like typing /
-    const skillBtn = bottomRow.createEl("button", { cls: "cc-icon-btn", attr: { "aria-label": "Commands" } });
+    const skillBtn = bottomRow.createEl("button", { cls: "cc-icon-btn", attr: { "aria-label": t("chat.commands.aria") } });
     setIcon(skillBtn, "slash");
     skillBtn.addEventListener("click", () => {
       this.inputEl.value = "/";
@@ -328,39 +341,32 @@ export class ClaudeChatView extends ItemView {
 
     // Model selector trigger
     const modelTrigger = bottomRow.createDiv("cc-model-trigger");
-    const modelLabel = modelTrigger.createSpan({ cls: "cc-model-text", text: MODEL_LABELS[this.pm.model] });
+    const modelLabel = modelTrigger.createSpan({ cls: "cc-model-text", text: t(MODEL_LABEL_KEYS[this.pm.model]) });
     const modelChevron = modelTrigger.createSpan("cc-chevron");
     setIcon(modelChevron, "chevron-down");
 
     // Stop button (visible when running)
-    this._stopBtn = bottomRow.createEl("button", { cls: "cc-stop-btn", attr: { "aria-label": "Stop" } });
+    this._stopBtn = bottomRow.createEl("button", { cls: "cc-stop-btn", attr: { "aria-label": t("chat.header.stopAria") } });
     setIcon(this._stopBtn, "square");
     this._stopBtn.addEventListener("click", () => this.pm.abort());
 
     // Send button
-    this.sendBtn = bottomRow.createEl("button", { cls: "cc-send-btn", attr: { "aria-label": "Send" } });
+    this.sendBtn = bottomRow.createEl("button", { cls: "cc-send-btn", attr: { "aria-label": t("chat.send.aria") } });
     setIcon(this.sendBtn, "arrow-up");
 
     // ── Model/effort popup ──
     const popup = inputArea.createDiv("cc-popup");
     popup.addClass("is-hidden");
 
-    const MODEL_DESCS: Record<string, string> = {
-      "opus[1m]": "Most capable, 1M extended context",
-      opus: "Most capable, 200K context",
-      sonnet: "Balanced for everyday tasks",
-      haiku: "Fastest for quick answers",
-    };
-
     this.modelBtns = {} as Record<ModelChoice, HTMLElement>;
     const modelKeys: ModelChoice[] = ["opus[1m]", "opus", "sonnet", "haiku"];
     for (const key of modelKeys) {
       const item = popup.createDiv("cc-popup-item" + (key === this.pm.model ? " is-active" : ""));
-      item.createDiv({ cls: "cc-popup-item-name", text: MODEL_LABELS[key] });
-      item.createDiv({ cls: "cc-popup-item-desc", text: MODEL_DESCS[key] });
+      item.createDiv({ cls: "cc-popup-item-name", text: t(MODEL_LABEL_KEYS[key]) });
+      item.createDiv({ cls: "cc-popup-item-desc", text: t(MODEL_DESCRIPTION_KEYS[key]) });
       item.addEventListener("click", () => {
         this.selectModel(key);
-        modelLabel.textContent = MODEL_LABELS[key];
+        modelLabel.textContent = t(MODEL_LABEL_KEYS[key]);
         popup.querySelectorAll(".cc-popup-item").forEach(el => el.removeClass("is-active"));
         item.addClass("is-active");
         popup.addClass("is-hidden");
@@ -372,7 +378,7 @@ export class ClaudeChatView extends ItemView {
 
     // Effort inside popup
     const effortSection = popup.createDiv("cc-popup-effort");
-    effortSection.createDiv({ cls: "cc-popup-effort-title", text: "Effort level" });
+    effortSection.createDiv({ cls: "cc-popup-effort-title", text: t("chat.popup.effort.title") });
     const effortRow = effortSection.createDiv("cc-popup-effort-row");
 
     this.effortBtns = {} as Record<EffortLevel, HTMLElement>;
@@ -380,7 +386,7 @@ export class ClaudeChatView extends ItemView {
     for (const key of effortKeys) {
       const pill = effortRow.createEl("button", {
         cls: "cc-pill" + (key === this.pm.effort ? " is-active" : ""),
-        text: EFFORT_LABELS[key],
+        text: t(EFFORT_LABEL_KEYS[key]),
       });
       pill.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -568,28 +574,28 @@ export class ClaudeChatView extends ItemView {
       if (this.emptyState) {
         this.emptyState.empty();
         this.emptyState.createDiv({ cls: "claude-native-empty-title", text: "KatmerCode" });
-        this.emptyState.createDiv({ cls: "claude-native-empty-subtitle", text: "Send a message to start" });
+        this.emptyState.createDiv({ cls: "claude-native-empty-subtitle", text: t("chat.empty.subtitle") });
       }
-      if (this.statusBar) this.statusBar.textContent = "Ready";
+      if (this.statusBar) this.statusBar.textContent = t("chat.status.ready");
     } catch {
       // CLI not found
       if (this.emptyState) {
         this.emptyState.empty();
-        this.emptyState.createDiv({ cls: "claude-native-empty-title", text: "Claude Code CLI not found" });
+        this.emptyState.createDiv({ cls: "claude-native-empty-title", text: t("chat.empty.cliNotFoundTitle") });
         const setup = this.emptyState.createDiv("claude-native-empty-setup");
-        setup.createEl("p").createEl("strong", { text: "Install the CLI" });
+        setup.createEl("p").createEl("strong", { text: t("chat.empty.installCli") });
         const installCmd = "npm install -g @anthropic-ai/claude-code";
         const installPre = setup.createEl("pre");
         installPre.textContent = installCmd;
-        setup.createEl("p").createEl("strong", { text: "Log in (run once in terminal)" });
+        setup.createEl("p").createEl("strong", { text: t("chat.empty.loginCli") });
         const loginCmd = "claude";
         const loginPre = setup.createEl("pre");
         loginPre.textContent = loginCmd;
-        setup.createEl("p").createEl("strong", { text: "Reload this plugin" });
-        setup.createEl("p", { cls: "claude-native-empty-hint", text: "If the CLI is installed but not found, set the full path in plugin settings" });
+        setup.createEl("p").createEl("strong", { text: t("chat.empty.reloadPlugin") });
+        setup.createEl("p", { cls: "claude-native-empty-hint", text: t("chat.empty.cliMissingHint") });
       }
       if (this.statusBar) {
-        this.statusBar.textContent = "CLI not found";
+        this.statusBar.textContent = t("chat.status.cliNotFound");
         this.statusBar.className = "claude-native-status";
       }
     }
@@ -689,9 +695,9 @@ export class ClaudeChatView extends ItemView {
       item.createSpan({ cls: "cc-skill-name", text: cmd.name });
       item.createSpan({ cls: "cc-skill-desc", text: cmd.desc });
       if (cmd.source === "sdk") {
-        item.createSpan({ cls: "cc-skill-badge cc-skill-badge-sdk", text: "CLI" });
+        item.createSpan({ cls: "cc-skill-badge cc-skill-badge-sdk", text: t("chat.skill.badge.cli") });
       } else if (!cmd.enabled) {
-        item.createSpan({ cls: "cc-skill-badge", text: "off" });
+        item.createSpan({ cls: "cc-skill-badge", text: t("chat.skill.badge.off") });
       }
       item.addEventListener("click", () => {
         if (cmd.enabled) this.applySkillCompletion(cmd.name);
@@ -755,14 +761,14 @@ export class ClaudeChatView extends ItemView {
     } else if (toolName === "Thinking") {
       // Don't override subagent progress with "Thinking..."
       if (!this.currentActivity.startsWith("Subagent")) {
-        this.currentActivity = "Thinking…";
-        this.showLiveProgress("cat", "Thinking…");
+        this.currentActivity = t("chat.progress.thinking");
+        this.showLiveProgress("cat", t("chat.progress.thinking"));
         this.updateUI();
       }
       return;
     }
 
-    const prefix = isSubagent ? "Subagent " : "";
+    const prefix = isSubagent ? t("chat.progress.subagentPrefix") : "";
     this.currentActivity = detail ? `${prefix}${toolName}: ${detail}` : `${prefix}${toolName}`;
     this.showLiveProgress(icon, this.currentActivity);
     this.updateUI();
@@ -790,11 +796,7 @@ export class ClaudeChatView extends ItemView {
     if (this.progressTimer) clearInterval(this.progressTimer);
     const updateTimer = () => {
       const elapsed = Math.floor((Date.now() - this.progressStartTime) / 1000);
-      const min = Math.floor(elapsed / 60);
-      const sec = elapsed % 60;
-      timerEl.textContent = min > 0
-        ? `(esc to interrupt · ${min}m ${sec}s)`
-        : `(esc to interrupt · ${sec}s)`;
+      timerEl.textContent = `(${t("chat.progress.interruptHint")} · ${formatShortDuration(elapsed)})`;
     };
     updateTimer();
     this.progressTimer = setInterval(updateTimer, 1000);
@@ -853,7 +855,7 @@ export class ClaudeChatView extends ItemView {
       card.createSpan({ cls: "cc-context-card-file", text: file.name });
       const removeBtn = card.createEl("button", {
         cls: "cc-context-card-remove",
-        attr: { "aria-label": "Remove" },
+        attr: { "aria-label": t("chat.action.remove") },
       });
       setIcon(removeBtn, "x");
       removeBtn.addEventListener("click", () => {
@@ -886,7 +888,7 @@ export class ClaudeChatView extends ItemView {
 
     const removeBtn = card.createEl("button", {
       cls: "cc-context-card-remove",
-      attr: { "aria-label": "Remove" },
+      attr: { "aria-label": t("chat.action.remove") },
     });
     setIcon(removeBtn, "x");
     removeBtn.addEventListener("click", () => {
@@ -931,7 +933,7 @@ export class ClaudeChatView extends ItemView {
       btn.toggleClass("is-active", key === level);
     }
     if (this.pm.query) {
-      new Notice("Effort change applies on next session", 2000);
+      new Notice(t("chat.notice.effortChangeNextSession"), 2000);
     }
   }
 
@@ -951,8 +953,8 @@ export class ClaudeChatView extends ItemView {
 
     // Tooltip with compact suggestion
     const tooltip = warning
-      ? `${fmtK(contextTokens)} / ${fmtK(contextWindow)} — run /compact to continue`
-      : `${fmtK(contextTokens)} / ${fmtK(contextWindow)}`;
+      ? t("chat.context.tooltip.warn", { counts: `${fmtK(contextTokens)} / ${fmtK(contextWindow)}`, command: "/compact" })
+      : t("chat.context.tooltip.normal", { counts: `${fmtK(contextTokens)} / ${fmtK(contextWindow)}` });
     this.contextBar.parentElement?.setAttribute("title", tooltip);
   }
 
@@ -986,7 +988,7 @@ export class ClaudeChatView extends ItemView {
     if (!isSlashCommand) {
       // Attached selection context
       if (this.attachedContext) {
-        fullMessage = `[Selected text from ${this.attachedContext.fileName}]:\n${this.attachedContext.text}\n\n${text}`;
+        fullMessage = `[${t("chat.message.selectionFrom", { fileName: this.attachedContext.fileName })}]:\n${this.attachedContext.text}\n\n${text}`;
       }
 
       // Auto-include active file path (if user didn't explicitly attach selection)
@@ -995,14 +997,14 @@ export class ClaudeChatView extends ItemView {
         if (activeFile) {
           const vaultPath = (this.app.vault.adapter as { basePath?: string }).basePath || "";
           const absPath = vaultPath + "/" + activeFile.path;
-          fullMessage = `[Active file: ${absPath}]\n\n${text}`;
+          fullMessage = `[${t("chat.message.activeFile", { path: absPath })}]\n\n${text}`;
         }
       }
 
       // Attached images
       if (this.attachedImages.length > 0) {
         for (const img of this.attachedImages) {
-          fullMessage += `\n\n[Image: ${img.path}]`;
+          fullMessage += `\n\n[${t("chat.message.image", { path: img.path })}]`;
         }
       }
     }
@@ -1059,7 +1061,7 @@ export class ClaudeChatView extends ItemView {
     this.pm.send(fullMessage, cwd);
 
     // Show "Thinking..." immediately — don't wait for first event
-    this.showLiveProgress("cat", "Thinking…");
+    this.showLiveProgress("cat", t("chat.progress.thinking"));
     this.scrollToBottom();
   }
 
@@ -1193,7 +1195,7 @@ export class ClaudeChatView extends ItemView {
       return new Promise<"allow" | "deny" | "always">((resolve) => {
         tab.pendingPermissions.push({ info, resolve });
         // Show a notice so user knows
-        new Notice(`Tab "${tab.title}" needs permission for ${info.toolName}`, 5000);
+        new Notice(t("chat.permission.tabNeeds", { title: tab.title, toolName: info.toolName }), 5000);
       });
     };
   }
@@ -1212,7 +1214,7 @@ export class ClaudeChatView extends ItemView {
   private createInitialTab(): void {
     const tab: TabState = {
       id: crypto.randomUUID(),
-      title: "New chat",
+      title: t("chat.tab.new"),
       messages: [],
       session: null,
       sessionId: null,
@@ -1234,7 +1236,7 @@ export class ClaudeChatView extends ItemView {
 
     const tab: TabState = {
       id: crypto.randomUUID(),
-      title: "New chat",
+      title: t("chat.tab.new"),
       messages: [],
       session: null,
       sessionId: null,
@@ -1305,7 +1307,7 @@ export class ClaudeChatView extends ItemView {
       this.emptyState = this.chatContainer.createDiv("claude-native-empty");
       this.emptyState.empty();
       this.emptyState.createDiv({ cls: "claude-native-empty-title", text: "KatmerCode" });
-      this.emptyState.createDiv({ cls: "claude-native-empty-subtitle", text: "Send a message to start" });
+      this.emptyState.createDiv({ cls: "claude-native-empty-subtitle", text: t("chat.empty.subtitle") });
     } else {
       for (const msg of this.messages) {
         if (msg.role === "user") this.renderUserMessage(msg);
@@ -1315,7 +1317,7 @@ export class ClaudeChatView extends ItemView {
 
     // If the tab's PM is running, show progress indicator
     if (this.pm.isRunning) {
-      this.showLiveProgress("cat", this.currentActivity || "Thinking...");
+      this.showLiveProgress("cat", this.currentActivity || t("chat.progress.thinking"));
     }
 
     this.renderTabBar();
@@ -1359,7 +1361,7 @@ export class ClaudeChatView extends ItemView {
     tab.firstMessageText = this.firstMessageText;
     tab.turnCount = this.turnCount;
     // Update title from first message
-    if (this.firstMessageText && tab.title === "New chat") {
+    if (this.firstMessageText && tab.title === t("chat.tab.new")) {
       tab.title = this.firstMessageText.slice(0, 30) + (this.firstMessageText.length > 30 ? "…" : "");
     }
   }
@@ -1411,7 +1413,7 @@ export class ClaudeChatView extends ItemView {
     // Re-create empty state
     this.emptyState = this.chatContainer.createDiv("claude-native-empty");
     this.emptyState.createDiv({ cls: "claude-native-empty-title", text: "KatmerCode" });
-    this.emptyState.createDiv({ cls: "claude-native-empty-subtitle", text: "Send a message to start" });
+    this.emptyState.createDiv({ cls: "claude-native-empty-subtitle", text: t("chat.empty.subtitle") });
     this.updateUI();
   }
 
@@ -1439,7 +1441,7 @@ export class ClaudeChatView extends ItemView {
     if ((event as { subtype: string }).subtype === "compact_boundary") {
       const divider = this.chatContainer.createDiv("cc-compact-divider");
       divider.createDiv("cc-compact-line");
-      divider.createSpan({ cls: "cc-compact-label", text: "Context compacted" });
+      divider.createSpan({ cls: "cc-compact-label", text: t("chat.label.contextCompacted") });
       divider.createDiv("cc-compact-line");
       this.scrollToBottom();
       return;
@@ -1482,7 +1484,7 @@ export class ClaudeChatView extends ItemView {
       this.currentStreamingEl = this.chatContainer.createDiv(
         "claude-native-msg claude-native-msg-assistant is-streaming"
       );
-      this.currentStreamingEl.createDiv({ cls: "claude-native-msg-label", text: "Claude" });
+      this.currentStreamingEl.createDiv({ cls: "claude-native-msg-label", text: t("chat.label.claude") });
       this.streamingTextEl = this.currentStreamingEl.createDiv("claude-native-msg-body cc-streaming-body");
     }
 
@@ -1537,7 +1539,7 @@ export class ClaudeChatView extends ItemView {
       this.currentStreamingEl = this.chatContainer.createDiv(
         "claude-native-msg claude-native-msg-assistant is-streaming"
       );
-      this.currentStreamingEl.createDiv({ cls: "claude-native-msg-label", text: "Claude" });
+      this.currentStreamingEl.createDiv({ cls: "claude-native-msg-label", text: t("chat.label.claude") });
     }
     if (!this.currentAssistantMsg) {
       const msg: ChatMessage = {
@@ -1568,7 +1570,7 @@ export class ClaudeChatView extends ItemView {
 
         const tc: ToolCallInfo = {
           id: `thinking-${thinkIdx}`,
-          name: "Thinking",
+          name: t("chat.tool.thinking.name"),
           input: {},
           result: block.thinking,
           startTime: Date.now(),
@@ -1618,7 +1620,8 @@ export class ClaudeChatView extends ItemView {
           : Array.isArray(block.content)
             ? block.content.map((c: { text?: string }) => c.text || "").join("")
             : "";
-        const targetTool = [...this.currentAssistantMsg.toolCalls!].reverse().find(t => !t.result && t.name !== "Thinking");
+        const thinkingToolName = t("chat.tool.thinking.name");
+        const targetTool = [...this.currentAssistantMsg.toolCalls!].reverse().find(tool => !tool.result && tool.name !== thinkingToolName);
         if (targetTool) {
           targetTool.result = resultText;
           targetTool.isError = block.is_error;
@@ -1669,7 +1672,7 @@ export class ClaudeChatView extends ItemView {
     this._activePermissionCleanup?.();
 
     if (this.pm.state === "error" && !this.currentAssistantMsg) {
-      this.showError("Claude CLI exited with an error. Check Obsidian console (Cmd+Opt+I) for details.");
+      this.showError(t("chat.error.cliExited"));
     }
     // Finalize streaming state
     if (this.currentAssistantMsg) {
@@ -1686,7 +1689,7 @@ export class ClaudeChatView extends ItemView {
           const footer = this.currentStreamingEl.createDiv("cc-response-footer");
           const min = Math.floor(elapsed / 60);
           const sec = elapsed % 60;
-          const timeStr = min > 0 ? `${min}m ${sec}s` : `${sec}s`;
+          const timeStr = formatShortDuration(elapsed);
           footer.textContent = `* ${verb} for ${timeStr}`;
         }
       }
@@ -1714,7 +1717,7 @@ export class ClaudeChatView extends ItemView {
       }));
       this.onSaveSession({
         sessionId: this.session.sessionId,
-        firstMessage: this.firstMessageText || "New session",
+        firstMessage: this.firstMessageText || t("chat.session.defaultFirstMessage"),
         model: this.session.model,
         timestamp: Date.now(),
         messageCount: this.turnCount,
@@ -1733,7 +1736,7 @@ export class ClaudeChatView extends ItemView {
       const preview = this.queuedMessage.length > 40
         ? this.queuedMessage.slice(0, 40) + "…"
         : this.queuedMessage;
-      this.queueIndicatorEl.textContent = `Queued: ${preview}`;
+      this.queueIndicatorEl.textContent = `${t("chat.queue.prefix")} ${preview}`;
       this.queueIndicatorEl.removeClass("is-hidden");
     } else {
       this.queueIndicatorEl.addClass("is-hidden");
@@ -1771,7 +1774,7 @@ export class ClaudeChatView extends ItemView {
       const header = card.createDiv("cc-permission-header");
       const iconEl = header.createSpan("cc-permission-icon");
       setIcon(iconEl, "shield");
-      header.createSpan({ cls: "cc-permission-title", text: info.title || `Allow ${info.displayName || info.toolName}?` });
+      header.createSpan({ cls: "cc-permission-title", text: info.title || t("chat.permission.title", { name: info.displayName || info.toolName }) });
 
       // Description
       if (info.description) {
@@ -1794,9 +1797,9 @@ export class ClaudeChatView extends ItemView {
       // Buttons
       const btns = card.createDiv("cc-permission-buttons");
 
-      const denyBtn = btns.createEl("button", { cls: "cc-permission-btn cc-permission-btn-deny", text: "Deny" });
-      const allowBtn = btns.createEl("button", { cls: "cc-permission-btn cc-permission-btn-allow", text: "Allow" });
-      const alwaysBtn = btns.createEl("button", { cls: "cc-permission-btn cc-permission-btn-always", text: "Always allow" });
+      const denyBtn = btns.createEl("button", { cls: "cc-permission-btn cc-permission-btn-deny", text: t("chat.permission.deny") });
+      const allowBtn = btns.createEl("button", { cls: "cc-permission-btn cc-permission-btn-allow", text: t("chat.permission.allow") });
+      const alwaysBtn = btns.createEl("button", { cls: "cc-permission-btn cc-permission-btn-always", text: t("chat.permission.alwaysAllow") });
 
       let resolved = false;
       const cleanup = (result: "allow" | "deny" | "always") => {
@@ -1821,12 +1824,12 @@ export class ClaudeChatView extends ItemView {
   private showContextFullError(): void {
     if (!this.chatContainer) return;
     const wrapper = this.chatContainer.createDiv("claude-native-msg claude-native-msg-error");
-    wrapper.createDiv({ cls: "claude-native-msg-label", text: "Context full" });
+    wrapper.createDiv({ cls: "claude-native-msg-label", text: t("chat.label.contextFull") });
     const body = wrapper.createDiv("claude-native-msg-body");
-    body.createEl("p", { text: "Context window is full. Start a new session to continue." });
+    body.createEl("p", { text: t("chat.error.contextFullBody") });
     const btn = body.createEl("button", {
       cls: "katmer-report-notice-btn katmer-report-notice-btn-primary",
-      text: "New session",
+      text: t("chat.error.contextFullButton"),
     });
     btn.addEventListener("click", () => this.newSession());
     this.scrollToBottom();
@@ -1835,7 +1838,7 @@ export class ClaudeChatView extends ItemView {
   private showError(text: string): void {
     if (!this.chatContainer) return;
     const wrapper = this.chatContainer.createDiv("claude-native-msg claude-native-msg-error");
-    wrapper.createDiv({ cls: "claude-native-msg-label", text: "Error" });
+    wrapper.createDiv({ cls: "claude-native-msg-label", text: t("chat.label.error") });
     const body = wrapper.createDiv("claude-native-msg-body");
     body.createEl("pre", { text, cls: "claude-native-error-text" });
     this.scrollToBottom();
@@ -1845,7 +1848,7 @@ export class ClaudeChatView extends ItemView {
 
   private renderUserMessage(msg: ChatMessage): void {
     const wrapper = this.chatContainer.createDiv("claude-native-msg claude-native-msg-user");
-    wrapper.createDiv({ cls: "claude-native-msg-label", text: "You" });
+    wrapper.createDiv({ cls: "claude-native-msg-label", text: t("chat.label.user") });
 
     // Show attachments (files, selections) above the message text
     if (msg.attachments && msg.attachments.length > 0) {
@@ -1859,7 +1862,7 @@ export class ClaudeChatView extends ItemView {
           chip.createSpan({ cls: "cc-user-attachment-name", text: att.name });
         } else {
           setIcon(icon, "quote");
-          chip.createSpan({ cls: "cc-user-attachment-name", text: att.name || "Selection" });
+          chip.createSpan({ cls: "cc-user-attachment-name", text: att.name || t("chat.label.selection") });
           if (att.preview) {
             chip.createDiv({ cls: "cc-user-attachment-preview", text: att.preview });
           }
@@ -1875,7 +1878,7 @@ export class ClaudeChatView extends ItemView {
     const wrapper = this.chatContainer.createDiv(
       "claude-native-msg claude-native-msg-assistant" + (msg.isStreaming ? " is-streaming" : "")
     );
-    wrapper.createDiv({ cls: "claude-native-msg-label", text: "Claude" });
+    wrapper.createDiv({ cls: "claude-native-msg-label", text: t("chat.label.claude") });
     this.renderAssistantContent(wrapper, msg);
     return wrapper;
   }
@@ -1884,7 +1887,7 @@ export class ClaudeChatView extends ItemView {
     if (!msg.segments || msg.segments.length === 0) {
       // Full re-render for non-segment messages
       el.empty();
-      el.createDiv({ cls: "claude-native-msg-label", text: "Claude" });
+      el.createDiv({ cls: "claude-native-msg-label", text: t("chat.label.claude") });
       this.renderAssistantContent(el, msg);
       return;
     }
@@ -1955,7 +1958,8 @@ export class ClaudeChatView extends ItemView {
     }
 
     // Thinking block — special compact render with timer
-    if (tc.name === "Thinking") {
+    const thinkingToolName = t("chat.tool.thinking.name");
+    if (tc.name === thinkingToolName) {
       const panel = parent.createDiv("cc-thinking-block" + (tc.result ? " is-done" : " is-running"));
       const header = panel.createDiv("cc-thinking-header");
       const iconEl = header.createSpan("cc-thinking-icon");
@@ -1965,21 +1969,21 @@ export class ClaudeChatView extends ItemView {
       if (tc.result) {
         // Finished — show duration
         label.textContent = tc.startTime
-          ? `Thought for ${Math.floor((Date.now() - tc.startTime) / 1000)}s`
-          : "Thinking";
+          ? t("chat.tool.thinking.completed", { time: formatShortDuration(Math.floor((Date.now() - tc.startTime) / 1000)) })
+          : thinkingToolName;
       } else {
         // Running — live timer
-        label.textContent = "Thinking 0s…";
+        label.textContent = t("chat.tool.thinking.running", { time: formatShortDuration(0) });
         const start = tc.startTime || Date.now();
         const interval = setInterval(() => {
           if (tc.result || !document.contains(panel)) {
             clearInterval(interval);
-            label.textContent = `Thought for ${Math.floor((Date.now() - start) / 1000)}s`;
+            label.textContent = t("chat.tool.thinking.completed", { time: formatShortDuration(Math.floor((Date.now() - start) / 1000)) });
             panel.removeClass("is-running");
             panel.addClass("is-done");
             return;
           }
-          label.textContent = `Thinking ${Math.floor((Date.now() - start) / 1000)}s…`;
+          label.textContent = t("chat.tool.thinking.running", { time: formatShortDuration(Math.floor((Date.now() - start) / 1000)) });
         }, 1000);
       }
 
@@ -2021,7 +2025,7 @@ export class ClaudeChatView extends ItemView {
     const statusBadge = header.createSpan("cc-tool-status");
     if (isRunning) {
       statusBadge.addClass("is-running");
-      statusBadge.textContent = "Running";
+      statusBadge.textContent = t("chat.tool.status.running");
       // Elapsed timer for long-running tools (Agent, Bash)
       if (tc.startTime && (isAgent || tc.name === "Bash")) {
         const timerSpan = header.createSpan("cc-tool-timer");
@@ -2104,7 +2108,7 @@ export class ClaudeChatView extends ItemView {
     const iconSpan = header.createSpan("claude-native-tool-icon");
     setIcon(iconSpan, "pencil");
     header.createSpan({ text: fileName, cls: "claude-native-diff-title" });
-    const statusSpan = header.createSpan({ cls: "claude-native-diff-status is-accepted", text: "Applied" });
+    const statusSpan = header.createSpan({ cls: "claude-native-diff-status is-accepted", text: t("chat.diff.status.applied") });
 
     // Only trigger showEditInEditor for LIVE edits (not resumed/re-rendered ones)
     if (!this.editDiffShown.has(tc.id) && this._isLiveSession) {
@@ -2217,11 +2221,11 @@ export class ClaudeChatView extends ItemView {
             return;
           }
           if (thisChange.status === "accepted") {
-            statusSpan.textContent = "Accepted";
+            statusSpan.textContent = t("chat.diff.status.accepted");
             statusSpan.className = "claude-native-diff-status is-accepted";
             clearInterval(pollInterval);
           } else if (thisChange.status === "rejected") {
-            statusSpan.textContent = "Undone";
+            statusSpan.textContent = t("chat.diff.status.undone");
             statusSpan.className = "claude-native-diff-status is-rejected";
             chatPanel.addClass("is-rejected");
             clearInterval(pollInterval);
@@ -2240,10 +2244,10 @@ export class ClaudeChatView extends ItemView {
   private updateDiffSummary(cmView: EditorView, statusSpan: HTMLElement): void {
     const summary = getChangeSummary(cmView);
     if (summary.pending > 0) {
-      statusSpan.textContent = `${summary.pending} pending`;
+      statusSpan.textContent = formatCount(summary.pending, t("count.change.one"), t("count.change.few"), t("count.change.many"));
       statusSpan.className = "claude-native-diff-status is-pending";
     } else if (summary.total > 0) {
-      statusSpan.textContent = "Done";
+      statusSpan.textContent = t("chat.tool.status.done");
       statusSpan.className = "claude-native-diff-status is-accepted";
     }
     this.refreshDiffBar();
@@ -2264,7 +2268,10 @@ export class ClaudeChatView extends ItemView {
     }
     this.diffBar.removeClass("is-hidden");
     const fileName = this.diffBarFilePath.split("/").pop() || "";
-    this.diffBarLabel.textContent = `${fileName} · ${summary.pending} change${summary.pending > 1 ? "s" : ""}`;
+    this.diffBarLabel.textContent = t("chat.diff.summary", {
+      fileName,
+      changes: formatCount(summary.pending, t("count.change.one"), t("count.change.few"), t("count.change.many")),
+    });
   }
 
   // (word-level diff now handled by editor-extension.ts via commonPrefix/commonSuffix)
@@ -2293,11 +2300,11 @@ export class ClaudeChatView extends ItemView {
 
       const copyBtn = document.createElement("button");
       copyBtn.className = "cc-code-copy";
-      copyBtn.textContent = "Copy";
+      copyBtn.textContent = t("chat.code.copy");
       copyBtn.addEventListener("click", () => {
         void navigator.clipboard.writeText(code.textContent || "");
-        copyBtn.textContent = "Copied!";
-        setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
+        copyBtn.textContent = t("chat.code.copied");
+        setTimeout(() => { copyBtn.textContent = t("chat.code.copy"); }, 1500);
       });
       header.appendChild(copyBtn);
 
@@ -2320,7 +2327,7 @@ export class ClaudeChatView extends ItemView {
     // Status bar
     if (!this.statusBar) return;
     if (running) {
-      this.statusBar.textContent = this.currentActivity || "Thinking…";
+      this.statusBar.textContent = this.currentActivity || t("chat.status.thinking");
       this.statusBar.className = "claude-native-status is-thinking";
       return;
     }
@@ -2339,7 +2346,7 @@ export class ClaudeChatView extends ItemView {
       }
     }
 
-    this.statusBar.textContent = parts.length > 0 ? parts.join(" · ") : "Ready";
+    this.statusBar.textContent = parts.length > 0 ? parts.join(" · ") : t("chat.status.ready");
     this.statusBar.className = "claude-native-status" + (this.session ? " is-connected" : "");
   }
 

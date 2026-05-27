@@ -1,66 +1,66 @@
-Recommend target journals for "$ARGUMENTS".
+Подбери целевые журналы для "$ARGUMENTS".
 
-Input can be:
-- Manuscript file path → read and analyze
-- Abstract text → use directly
-- Topic description → search based on topic
+Вход может быть таким:
+- Путь к файлу рукописи → прочитай и проанализируй
+- Текст аннотации → используй напрямую
+- Описание темы → выполняй поиск по теме
 
-## MAIN FLOW
+## ОСНОВНОЙ ПОТОК
 
 ```
-Main Session — coordination
+Основная сессия — координация
   │
-  ├── STEP 1: Extract manuscript profile (self)
-  ├── STEP 2: Subagent → find similar papers + analyze venue distribution
-  ├── STEP 3: Enrich journal metadata (self)
-  └── STEP 4: Present ranked recommendations
+  ├── ШАГ 1: Извлечь профиль рукописи (самостоятельно)
+  ├── ШАГ 2: Субагент → найти похожие статьи + проанализировать распределение по журналам
+  ├── ШАГ 3: Обогатить метаданные журналов (самостоятельно)
+  └── ШАГ 4: Представить ранжированные рекомендации
 ```
 
-## STEP 1: Manuscript Profile (self)
+## ШАГ 1: Профиль рукописи (самостоятельно)
 
-If file path given, read with Read tool. Extract:
-- **Discipline**: law, CS, medicine, psychology, etc.
-- **Sub-field**: criminal law theory, NLP, oncology, etc.
-- **Methodology**: theoretical, empirical, mixed, review, meta-analysis
-- **Scope**: country-specific, comparative, universal
-- **Length**: word count estimate
-- **Keywords**: 5-10 key terms
-- **Language**: English, German, Turkish, etc.
-- **Reference profile**: what journals do the references cite? (candidate journals)
+Если указан путь к файлу, прочитай его с помощью инструмента Read. Извлеки:
+- **Дисциплина**: право, CS, медицина, психология и т. д.
+- **Подобласть**: теория уголовного права, NLP, онкология и т. д.
+- **Методология**: теоретическая, эмпирическая, смешанная, обзор, метаанализ
+- **Охват**: ориентированная на страну, сравнительная, универсальная
+- **Длина**: оценка количества слов
+- **Ключевые слова**: 5-10 основных терминов
+- **Язык**: английский, немецкий, турецкий и т. д.
+- **Профиль ссылок**: какие журналы цитируют источники? (кандидаты на журналы)
 
-## STEP 2: Find Similar Papers (subagent)
+## ШАГ 2: Найди похожие статьи (субагент)
 
-Launch subagent:
+Запусти субагента:
 
 ```
-TASK: Find journals where similar research is published.
+ЗАДАЧА: Найди журналы, где публикуются похожие исследования.
 
-MANUSCRIPT PROFILE:
-- Keywords: {keywords}
-- Discipline: {discipline}
-- Methodology: {methodology}
-- Language: {language}
+ПРОФИЛЬ РУКОПИСИ:
+- Ключевые слова: {keywords}
+- Дисциплина: {discipline}
+- Методология: {methodology}
+- Язык: {language}
 
-### Semantic Scholar — find similar papers
-For 3 keyword combinations:
+### Semantic Scholar — поиск похожих статей
+Для 3 комбинаций ключевых слов:
 WebFetch: https://api.semanticscholar.org/graph/v1/paper/search?query={keywords}&limit=50&fields=title,venue,year,citationCount,externalIds
-→ Extract venue from each result
+→ Извлеки журнал / venue из каждого результата
 
-### OpenAlex — venue analysis
+### OpenAlex — анализ журналов
 WebFetch: https://api.openalex.org/works?search={keywords}&per_page=50&sort=cited_by_count:desc&mailto=katmercode@example.com
-→ Group by venue, count papers per venue
+→ Сгруппируй по журналам и подсчитай статьи в каждом
 
-### OpenAlex — journal details for top 15 venues
+### OpenAlex — детали журналов для топ-15
 WebFetch: https://api.openalex.org/sources?filter=display_name.search:{journal_name}&mailto=katmercode@example.com
-→ Gets: works_count, cited_by_count, h_index, type, is_oa, country
+→ Получи: works_count, cited_by_count, h_index, type, is_oa, country
 
-OUTPUT:
+ВЫХОД:
 | Journal | Papers Found | Avg Citations | H-Index | OA? | Country | Scope Match (1-5) |
 ```
 
-## STEP 3: Enrich Journal Data (self)
+## ШАГ 3: Обогащение данных по журналам (самостоятельно)
 
-For top 10 journals:
+Для топ-10 журналов:
 
 ### OpenAlex Sources
 ```
@@ -68,57 +68,57 @@ WebFetch: https://api.openalex.org/sources/{source_id}?mailto=katmercode@example
 → h_index, works_count, cited_by_count, is_oa, homepage_url, issn
 ```
 
-### CrossRef Journals (if ISSN available)
+### CrossRef Journals (если есть ISSN)
 ```
 WebFetch: https://api.crossref.org/journals/{issn}
-→ Publication frequency, subject coverage
+→ Периодичность публикации, тематический охват
 ```
 
-## STEP 4: Present Recommendations
+## ШАГ 4: Представь рекомендации
 
 ```
-## Recommended Journals
+## Рекомендуемые журналы
 
-### Tier 1: Best Match (scope + impact)
+### Tier 1: Лучшее соответствие (охват + влияние)
 1. **Journal of X** (H-index: 85, OA: Yes)
-   - Scope match: 5/5 — publishes exactly this type of work
-   - Similar papers found: 12 in last 3 years
-   - Notable: published {related paper} closely related to yours
+   - Совпадение по охвату: 5/5 — публикует именно такой тип работ
+   - Найдено похожих статей: 12 за последние 3 года
+   - Примечание: опубликована {related paper}, близкая по теме к вашей работе
 
-### Tier 2: Good Alternative
+### Tier 2: Хорошая альтернатива
 ...
 
-### Tier 3: Specialized/Niche
+### Tier 3: Специализированный / нишевый
 ...
 
-### Language-Specific Options (if non-English manuscript)
+### Варианты для конкретного языка (если рукопись не на английском)
 ...
 ```
 
-For each journal:
-- Scope alignment explanation
-- Recent similar papers found there
-- Impact metrics (h-index, citation rate)
-- Open access status
-- Homepage URL
+Для каждого журнала:
+- Объяснение соответствия по охвату
+- Последние похожие статьи, опубликованные там
+- Показатели влияния (h-index, citation rate)
+- Статус открытого доступа
+- URL главной страницы
 
-## STEP 5: Next Actions
+## ШАГ 5: Следующие действия
 
-- "Format manuscript for a specific journal's guidelines?"
-- "Check if your references match what these journals typically cite?"
-- "Draft a cover letter for one of these?"
+- "Отформатировать рукопись под требования конкретного журнала?"
+- "Проверить, совпадают ли ваши ссылки с тем, что обычно цитируют эти журналы?"
+- "Составить сопроводительное письмо для одного из них?"
 
-## ERROR HANDLING
-- Manuscript too short: ask for additional keywords/discipline
-- Journal not in OpenAlex: fall back to CrossRef ISSN
-- Non-English journals: less coverage, note limitation
+## ОБРАБОТКА ОШИБОК
+- Рукопись слишком короткая: попроси дополнительные ключевые слова / дисциплину
+- Журнал отсутствует в OpenAlex: переходи к CrossRef по ISSN
+- Неанглоязычные журналы: покрытие слабее, отметь ограничение
 
-## TOKEN BUDGET
-- Main: ~5K (profile + presentation)
-- Similar papers subagent: ~15-20K
-- Journal enrichment: ~5-10K
-- Total: ~25-35K
+## БЮДЖЕТ ТОКЕНОВ
+- Основная сессия: ~5K (профиль + представление)
+- Субагент похожих статей: ~15-20K
+- Обогащение данных по журналам: ~5-10K
+- Итого: ~25-35K
 
-## REPORT DESIGN
-When writing the HTML report, follow the design system in /report-template EXACTLY.
-Do NOT use Tailwind CDN. Use the custom CSS variables, Crimson Pro font, and academic book aesthetic defined there.
+## ДИЗАЙН ОТЧЁТА
+При написании HTML-отчёта строго следуй дизайн-системе в /report-template.
+НЕ используй Tailwind CDN. Используй пользовательские CSS-переменные, шрифт Crimson Pro и академическую книжную эстетику, определённую там.

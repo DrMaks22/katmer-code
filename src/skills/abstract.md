@@ -1,85 +1,85 @@
-Generate an abstract for "$ARGUMENTS".
+Сгенерируй аннотацию для "$ARGUMENTS".
 
-Resolve file path:
-- Filename only: look in current working directory
-- Full path: use as-is
+Определи путь к файлу:
+- Если указан только filename: ищи в текущем рабочем каталоге
+- Если указан полный путь: используй как есть
 
-Do NOT use subagents — this is a pure LLM task, do it yourself.
+НЕ используй субагентов — это чистая задача для LLM, выполни её самостоятельно.
 
-## STEP 1: Read Manuscript
+## ШАГ 1: Прочитай рукопись
 
-Read file with Read tool. Identify:
-- Title
-- Research question / thesis statement
-- Methodology (if applicable)
-- Key arguments / findings
-- Conclusion
+Прочитай файл с помощью инструмента Read. Определи:
+- Заголовок
+- Исследовательский вопрос / тезис
+- Методологию (если применимо)
+- Ключевые аргументы / результаты
+- Заключение
 
-## STEP 2: Detect Discipline & Choose Format
+## ШАГ 2: Определи дисциплину и выбери формат
 
-- **STEM / empirical**: Use IMRaD format (Background, Objective, Methods, Results, Conclusion)
-- **Humanities / law / theoretical**: Use thematic format (Context, Thesis, Approach, Argument, Contribution)
-- If unclear: generate BOTH formats
+- **STEM / эмпирические работы**: используй формат IMRaD (Background, Objective, Methods, Results, Conclusion)
+- **Гуманитарные науки / право / теоретические работы**: используй тематический формат (Context, Thesis, Approach, Argument, Contribution)
+- Если неясно: сгенерируй ОБА формата
 
-## STEP 3: Generate All Variants
+## ШАГ 3: Сгенерируй все варианты
 
-### A. Structured Abstract (IMRaD — for empirical/science papers)
+### A. Структурированная аннотация (IMRaD — для эмпирических и научных работ)
 ```
-Background: [1-2 sentences]
-Objective: [1 sentence]
-Methods: [1-2 sentences]
-Results: [2-3 sentences]
-Conclusion: [1-2 sentences]
-Keywords: [5-7 terms]
+Background: [1-2 предложения]
+Objective: [1 предложение]
+Methods: [1-2 предложения]
+Results: [2-3 предложения]
+Conclusion: [1-2 предложения]
+Keywords: [5-7 терминов]
 ```
-~250 words
+~250 слов
 
-### B. Structured Abstract (for humanities/theoretical papers)
+### B. Структурированная аннотация (для гуманитарных / теоретических работ)
 ```
-Context: [1-2 sentences — why this topic matters]
-Thesis: [1 sentence — central argument]
-Approach: [1-2 sentences — methodology, scope, sources]
-Argument: [2-3 sentences — key steps]
-Contribution: [1-2 sentences — what this adds to the field]
-Keywords: [5-7 terms]
+Context: [1-2 предложения — почему эта тема важна]
+Thesis: [1 предложение — центральный аргумент]
+Approach: [1-2 предложения — методология, охват, источники]
+Argument: [2-3 предложения — ключевые шаги рассуждения]
+Contribution: [1-2 предложения — что это добавляет к полю]
+Keywords: [5-7 терминов]
 ```
-~250 words
+~250 слов
 
-### C. Unstructured Abstract (single paragraph)
-~150 words — concise narrative
+### C. Неструктурированная аннотация (единый абзац)
+~150 слов — краткое повествовательное резюме
 
-### D. Extended Abstract
-~500 words — conference submission style
+### D. Развёрнутая аннотация
+~500 слов — формат для подачи на конференцию
 
-### E. Short Abstract
-~50-75 words — for indexing/cataloging
+### E. Краткая аннотация
+~50-75 слов — для индексирования / каталогизации
 
-## STEP 4: Bilingual (if applicable)
+## ШАГ 4: Двуязычность (если применимо)
 
-If manuscript is NOT in English:
-- Generate all variants in original language AND English
-- Label: "Abstract (Original)" / "Abstract (English)"
+Если рукопись НЕ на английском:
+- Сгенерируй все варианты на исходном языке И на английском
+- Подписи: "Abstract (Original)" / "Abstract (English)"
 
-## STEP 5: Quality Checks
+## ШАГ 5: Проверка качества
 
-For each abstract verify:
-- [ ] Contains main research question
-- [ ] States methodology or approach
-- [ ] Mentions key findings/arguments
-- [ ] Does NOT include info not in manuscript
-- [ ] No first person (unless discipline norm)
-- [ ] No citations in abstract
-- [ ] Stands alone — understandable without reading paper
-- [ ] Keywords specific enough for discoverability
+Для каждой аннотации проверь:
+- [ ] Содержит основной исследовательский вопрос
+- [ ] Указывает методологию или подход
+- [ ] Упоминает ключевые выводы / аргументы
+- [ ] НЕ добавляет информацию, которой нет в рукописи
+- [ ] Без первого лица (если это не норма дисциплины)
+- [ ] Без цитат в аннотации
+- [ ] Самодостаточна — понятна без чтения статьи
+- [ ] Ключевые слова достаточно специфичны для обнаружения
 
-## STEP 6: Present
+## ШАГ 6: Представь результат
 
-Show all variants with word counts. Ask:
-- "Which format fits your target journal/conference?"
-- "Adjust word count for a specific limit?"
-- "Search keyword usage in literature? (/lit-search {keywords})"
+Покажи все варианты с указанием объёма. Спроси:
+- "Какой формат лучше подходит для вашего целевого журнала / конференции?"
+- "Изменить объём под конкретный лимит?"
+- "Искать употребление ключевых слов в литературе? (/lit-search {keywords})"
 
-## NOTES
-- No API calls needed
-- If manuscript has existing abstract: show COMPARISON of what's different
-- Total tokens: ~10-20K depending on manuscript length
+## ПРИМЕЧАНИЯ
+- API-вызовы не нужны
+- Если в рукописи уже есть аннотация: покажи СРАВНЕНИЕ с тем, что изменилось
+- Всего токенов: ~10-20K в зависимости от длины рукописи

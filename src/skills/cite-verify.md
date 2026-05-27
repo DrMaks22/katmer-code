@@ -1,224 +1,224 @@
-Verify all citations in "$ARGUMENTS".
+Проверь все цитаты в "$ARGUMENTS".
 
-Resolve file path:
-- Filename only: look in current working directory
-- Full path: use as-is
+Определи путь к файлу:
+- Если указан только filename: ищи в текущем рабочем каталоге
+- Если указан полный путь: используй как есть
 
-## CRITICAL RULE
+## КРИТИЧЕСКОЕ ПРАВИЛО
 
-Every citation must be checked. No "not searched" category.
-Result is either "found", "partial match", or "not found".
+Каждая цитата должна быть проверена. Категории "не искал" не существует.
+Результат всегда один из вариантов: "found", "partial match" или "not found".
 
-## MAIN FLOW
+## ОСНОВНОЙ ПОТОК
 
 ```
-Main Session — coordination only
+Основная сессия — только координация
   │
-  ├── STEP 1: Parse citations from manuscript (self)
-  ├── STEP 2: Resolve citations via APIs (subagent, batched)
-  ├── STEP 3: Open access check (subagent)
-  ├── STEP 4: (optional) Verify claims against full text (subagent)
-  └── STEP 5: HTML report
+  ├── ШАГ 1: Разобрать цитаты из рукописи (самостоятельно)
+  ├── ШАГ 2: Разрешить цитаты через API (субагент, пакетно)
+  ├── ШАГ 3: Проверить открытый доступ (субагент)
+  ├── ШАГ 4: (необязательно) Сверить утверждения с полным текстом (субагент)
+  └── ШАГ 5: HTML-отчёт
 ```
 
-## STEP 1: Parse Citations (self)
+## ШАГ 1: Разбор цитат (самостоятельно)
 
-Read manuscript with Read tool. Extract all references:
+Прочитай рукопись с помощью инструмента Read. Извлеки все ссылки:
 
-### For footnote-style (`[^N]: Author, Title, Year, p.X`)
-- Parse each `[^N]:` definition
-- Extract: author, title/work, year, page, DOI if present
-- Resolve op. cit. / ibid. chains
+### Для сносочного стиля (`[^N]: Author, Title, Year, p.X`)
+- Разбери каждое определение `[^N]:`
+- Извлеки: автора, название работы, год, страницу, DOI, если он есть
+- Разреши цепочки op. cit. / ibid.
 
-### For author-year style (`(Smith, 2020, p. 45)` or `Smith (2020)`)
-Full text scan required. Regex patterns:
+### Для стиля author-year (`(Smith, 2020, p. 45)` или `Smith (2020)`)
+Требуется полный текстовый поиск. Регулярные выражения:
 - `(Author, Year)` → `\(([A-Z][a-z]+(?:\s(?:&|and)\s[A-Z][a-z]+)*(?:\set\sal\.)?),?\s*(\d{4})[^)]*\)`
 - `Author (Year)` → `([A-Z][a-z]+(?:\s(?:&|and)\s[A-Z][a-z]+)?)\s*\((\d{4})[^)]*\)`
-- Extract: author(s), year, page if present
-- Then match each to the BIBLIOGRAPHY/REFERENCES section at end of document
-- Bibliography entry has full title, journal, DOI → use those for API lookup
+- Извлеки: автора(ов), год, страницу, если она указана
+- Затем сопоставь каждую цитату с разделом BIBLIOGRAPHY/REFERENCES в конце документа
+- Запись в библиографии содержит полное название, журнал, DOI — используй их для API-поиска
 
-### For numbered style (`[1] Author...` or superscript¹)
-- Parse reference list at end
-- Match `[N]` or `^N` in text to bibliography entry N
+### Для нумерованного стиля (`[1] Author...` или верхний индекс¹)
+- Разбери список литературы в конце
+- Сопоставь `[N]` или `^N` в тексте с записью библиографии N
 
-### Auto-detect citation style
-Read first 50 lines + last 50 lines of the manuscript to detect:
-- `[^N]:` definitions → footnote style
-- `References` or `Bibliography` section + `(Author, Year)` in text → author-year
-- `[1]`...`[N]` in text + numbered reference list → numbered
-- Mixed → handle both
+### Автоопределение стиля цитирования
+Прочитай первые 50 строк и последние 50 строк рукописи, чтобы определить:
+- `[^N]:` определения → сноски
+- `References` или `Bibliography` + `(Author, Year)` в тексте → author-year
+- `[1]`...`[N]` в тексте + нумерованный список литературы → нумерованный стиль
+- Смешанный стиль → обрабатывай оба варианта
 
-Group by unique work:
+Сгруппируй по уникальной работе:
 ```
 Smith 2020 → [^3] p.45, [^7] p.89, [^12] p.102
 Jones 2019 → [^5] p.234
 ```
 
-Categorize:
-- **Journal article**: has journal name, volume, pages
-- **Book**: has publisher, edition
-- **Chapter**: has editor, book title
-- **Conference**: has proceedings
-- **Web/other**: URL, report, thesis
+Категоризируй:
+- **Journal article**: есть название журнала, том, страницы
+- **Book**: есть издатель, издание
+- **Chapter**: есть редактор, название книги
+- **Conference**: есть материалы конференции
+- **Web/other**: URL, отчёт, диссертация
 
-## STEP 2: Resolve via APIs (subagent)
+## ШАГ 2: Разрешение через API (субагент)
 
-Launch subagent. For each citation, try in order:
+Запусти субагента. Для каждой цитаты пробуй по порядку:
 
 ```
-1. IF DOI present:
+1. ЕСЛИ DOI указан:
    WebFetch: https://api.crossref.org/works/{doi}
-   → Confirms existence, gets metadata
+   → Подтверждает существование и получает метаданные
 
-2. IF no DOI — search by title:
+2. ЕСЛИ DOI нет — ищи по названию:
    WebFetch: https://api.crossref.org/works?query.bibliographic={encoded_title}&query.author={author}&rows=3
-   → Match by title similarity + author + year
+   → Сопоставляй по сходству названия + автору + году
 
-3. IF CrossRef fails — try Semantic Scholar:
+3. ЕСЛИ CrossRef не помог — попробуй Semantic Scholar:
    WebFetch: https://api.semanticscholar.org/graph/v1/paper/search?query={title} {author}&limit=3&fields=title,authors,year,externalIds,venue
 
-4. Record result:
-   - FOUND: metadata matches (title + author + year)
-   - PARTIAL: title matches but year/author differs
-   - NOT_FOUND: no match in any database
-   - FABRICATED: author exists but no such work found — possible hallucinated reference
+4. Зафиксируй результат:
+   - FOUND: метаданные совпадают (название + автор + год)
+   - PARTIAL: название совпадает, но год или автор отличаются
+   - NOT_FOUND: совпадений не найдено ни в одной базе
+   - FABRICATED: автор существует, но такой работы нет — возможно, ссылка выдумана
 
-5. IF FOUND — validate metadata details:
-   a. AUTHOR CHECK: Do the authors in manuscript match the API result?
-      Watch for: misspelled names, wrong initials, swapped first/last author
-   b. YEAR CHECK: Does publication year match?
-   c. VENUE CHECK: Does the journal/publisher name match?
-   d. PAGE RANGE CHECK: CrossRef returns page info (field: "page").
-      Compare manuscript's cited pages against the work's actual page range.
-      - If cited "p. 847" but work is pages "1-23" → PAGE OUT OF RANGE
-      - If cited "pp. 100-105" but work is pages "95-120" → OK (within range)
-      - If CrossRef has no page data: mark as UNCHECKED, not as error
-   e. TITLE CHECK: Exact or near-exact title match? Minor differences
-      (capitalization, subtitle) are OK. Major mismatch → wrong work.
+5. ЕСЛИ FOUND — проверь детали метаданных:
+   a. CHECK AUTHOR: совпадают ли авторы в рукописи с результатом API?
+      Обрати внимание на: опечатки в фамилиях, неверные инициалы, перестановку первого и последнего автора
+   b. CHECK YEAR: совпадает ли год публикации?
+   c. CHECK VENUE: совпадает ли название журнала / издателя?
+   d. CHECK PAGE RANGE: CrossRef возвращает страницы (поле "page").
+      Сравни страницы цитирования в рукописи с фактическим диапазоном страниц работы.
+      - Если цитируется "p. 847", а работа занимает "1-23" → PAGE OUT OF RANGE
+      - Если цитируется "pp. 100-105", а работа занимает "95-120" → OK (within range)
+      - Если CrossRef не содержит страниц: пометь как UNCHECKED, а не как ошибку
+   e. CHECK TITLE: точное или почти точное совпадение названия? Небольшие различия
+      (регистр, подзаголовок) допустимы. Сильное расхождение → неверная работа.
 
-6. For books (no DOI usually): search OpenAlex by title + author
+6. Для книг (обычно без DOI) — ищи в OpenAlex по названию + автору
    WebFetch: https://api.openalex.org/works?search={title}&filter=author.search:{author}&mailto=katmercode@example.com
-   Books often lack DOI but OpenAlex has good book coverage.
+   У книг часто нет DOI, но покрытие в OpenAlex хорошее.
 ```
 
-**Batch strategy**: Process in groups of 10. 1-second delay between API calls.
+**Стратегия пакетной обработки**: обрабатывай по 10 записей за раз. Между API-вызовами делай паузу 1 секунду.
 
-## STEP 3: Open Access Check (subagent)
+## ШАГ 3: Проверка открытого доступа (субагент)
 
-For each FOUND citation with a DOI:
+Для каждой FOUND-цитаты с DOI:
 
 ```
 WebFetch: https://api.unpaywall.org/v2/{doi}?email=katmercode@example.com
 
-Extract:
+Извлеки:
 - is_oa: true/false
-- best_oa_location.url: PDF link
+- best_oa_location.url: PDF-ссылка
 - oa_status: gold/green/hybrid/bronze/closed
 ```
 
-## STEP 4: Claim Verification (optional — ask user first)
+## ШАГ 4: Проверка утверждений (необязательно — сначала спроси пользователя)
 
-Only if user agrees (high token cost). For citations with OA PDF:
+Только если пользователь согласен (высокая стоимость по токенам). Для цитат с OA-PDF:
 
 ```
-1. WebFetch the PDF URL from Unpaywall
-2. Find the cited page/section
-3. Read surrounding context (not just the sentence — the full paragraph + neighbors)
-4. Analyze with these 5 CRITICAL CHECKS:
+1. WebFetch URL PDF из Unpaywall
+2. Найди цитируемую страницу / раздел
+3. Прочитай окружающий контекст (не только предложение — весь абзац и соседние)
+4. Проанализируй по этим 5 КРИТИЧЕСКИМ ПРОВЕРКАМ:
 
-CHECK 1 — AUTHOR'S OWN VIEW?
-Is the cited passage the author's own thesis, or are they reporting/quoting someone else?
-A paper that says "According to Smith, X is true" does NOT mean the paper's author endorses X.
+ПРОВЕРКА 1 — ЭТО СОБСТВЕННАЯ ПОЗИЦИЯ АВТОРА?
+Это цитируемый фрагмент отражает тезис самого автора или он пересказывает / цитирует чужую позицию?
+Если статья пишет "According to Smith, X is true", это НЕ означает, что автор статьи поддерживает X.
 
-CHECK 2 — CONTEXT: SUPPORT OR CRITIQUE?
-Does the source present the idea approvingly, critically, or neutrally?
-If the source is criticizing a claim but the manuscript cites it as support → MISMATCH.
+ПРОВЕРКА 2 — КОНТЕКСТ: ПОДТВЕРЖДЕНИЕ ИЛИ КРИТИКА?
+Подаёт ли источник идею одобрительно, критически или нейтрально?
+Если источник критикует тезис, а рукопись цитирует его как поддержку — НЕСООТВЕТСТВИЕ.
 
-CHECK 3 — FAITHFUL PARAPHRASE?
-Does the manuscript's summary accurately reflect the source?
-Watch for: exaggeration, narrowing, subtle meaning shifts, omitted qualifications.
+ПРОВЕРКА 3 — ТОЧНЫЙ ПАРАФРАЗ?
+Корректно ли резюме рукописи передаёт смысл источника?
+Следи за: преувеличением, сужением, тонкими сдвигами смысла, пропущенными оговорками.
 
-CHECK 4 — SCOPE MATCH?
-Does the source's claim have the same scope as the manuscript suggests?
-E.g., source says "in some cases X" but manuscript cites as "X is always true" → PARTIAL.
+ПРОВЕРКА 4 — СОВПАДАЕТ ЛИ ОБЛАСТЬ ПРИМЕНЕНИЯ?
+Соответствует ли масштаб утверждения в источнике тому, что подразумевает рукопись?
+Например, источник говорит "в некоторых случаях X", а рукопись пишет "X всегда верно" → PARTIAL.
 
-CHECK 5 — SELF-CITATION CHAINS?
-Does the source itself cite another work for this claim?
-If so, the original source may be more appropriate to cite.
+ПРОВЕРКА 5 — ЦЕПОЧКИ САМOЦИТИРОВАНИЯ?
+Цитирует ли сам источник другую работу ради этого утверждения?
+Если да, оригинальный источник может быть более уместной ссылкой.
 
-Per citation result:
-- VERIFIED: source supports the claim, author's own view, faithful paraphrase
-- PARTIAL: source discusses topic but claim overstated/nuanced/scope differs
-- MISMATCH: source says something different, or cited approvingly but source is critical
-- ATTRIBUTION: source attributes the idea to someone else — consider citing the original
-- UNVERIFIABLE: relevant section not found in accessible text
+Результат по каждой цитате:
+- VERIFIED: источник поддерживает утверждение, это собственная позиция автора и точный парафраз
+- PARTIAL: источник затрагивает тему, но утверждение чрезмерно обобщено / смещено по смыслу / по масштабу
+- MISMATCH: источник говорит о другом, либо цитируется как поддержка, хотя он критикует тезис
+- ATTRIBUTION: источник приписывает идею кому-то ещё — подумай о ссылке на оригинал
+- UNVERIFIABLE: релевантный фрагмент не найден в доступном тексте
 ```
 
-## STEP 5: HTML Report
+## ШАГ 5: HTML-отчёт
 
-Write to: reports/{date}-cite-verify-{manuscript}.html
+Запиши в: reports/{date}-cite-verify-{manuscript}.html
 
-Content:
-- Existence verification table (ALWAYS — even without full-text access):
+Содержимое:
+- Таблица проверки существования (ОБЯЗАТЕЛЬНО) — даже без доступа к полному тексту:
   | # | Ref | Authors | Title | Year | Exists? | Author OK? | Year OK? | Pages OK? | DOI | OA | Notes |
-- If claim verification done (STEP 4), add deep analysis table:
+- Если выполнена проверка утверждений (ШАГ 4), добавь таблицу глубокого анализа:
   | # | Ref | Author's View? | Faithful? | Scope OK? | Issue | Detail |
-- Summary stats:
-  - Total references: X
-  - Existence confirmed: Y (Z%)
-  - Not found / possibly fabricated: N
-  - Metadata issues (wrong author/year/pages): M
-  - Open access available: P
-  - Claims verified (if STEP 4): Q
-- Color-coded rows:
-  - green = found, all metadata matches
-  - yellow = found but metadata issue (wrong year, pages out of range, author mismatch)
-  - red = not found in any database (possibly fabricated)
-  - orange = FABRICATED flag (author exists, but this specific work does not)
-  - blue = attribution issue (STEP 4 only)
-- Design: Tailwind CDN, print-friendly
+- Сводная статистика:
+  - Всего ссылок: X
+  - Существование подтверждено: Y (Z%)
+  - Не найдено / возможно выдумано: N
+  - Ошибки метаданных (неверный автор / год / страницы): M
+  - Доступен открытый доступ: P
+  - Проверено утверждений (если выполнялся ШАГ 4): Q
+- Цветовая маркировка строк:
+  - зелёный = найдено, все метаданные совпадают
+  - жёлтый = найдено, но есть ошибка в метаданных (неверный год, страницы вне диапазона, несовпадение автора)
+  - красный = не найдено ни в одной базе (возможно, выдумано)
+  - оранжевый = флаг FABRICATED (автор существует, но именно этой работы нет)
+  - синий = проблема атрибуции (только ШАГ 4)
+- Дизайн: Tailwind CDN, пригодно для печати
 
-Open with: `open {file_path}`
+Открыть с помощью: `open {file_path}`
 
-## API REFERENCE
+## СПРАВОЧНИК API
 
-### CrossRef — Primary Resolution
+### CrossRef — основное разрешение
 ```
 By DOI: https://api.crossref.org/works/{doi}
 By query: https://api.crossref.org/works?query.bibliographic={title}&query.author={author}&rows=3
 ```
 
-### Semantic Scholar — Fallback
+### Semantic Scholar — запасной вариант
 ```
 https://api.semanticscholar.org/graph/v1/paper/search?query={title+author}&limit=3&fields=title,authors,year,externalIds
 ```
 
-### DOI Validation
+### Проверка DOI
 ```
 https://doi.org/api/handles/{doi}
 ```
 
-### Unpaywall — OA Check
+### Unpaywall — проверка OA
 ```
 https://api.unpaywall.org/v2/{doi}?email=katmercode@example.com
 ```
 
-## ERROR HANDLING
-- DOI malformed: clean (strip trailing punctuation, spaces), retry
-- CrossRef 0 results: try Semantic Scholar
-- Both fail: mark NOT_FOUND, flag "may exist outside indexed databases"
-- Non-English titles: try both original language AND English translation
-- Rate limited: batch with delays, report partial results
+## ОБРАБОТКА ОШИБОК
+- DOI некорректен: очисти его (удали завершающую пунктуацию и пробелы), затем повтори
+- CrossRef вернул 0 результатов: попробуй Semantic Scholar
+- Оба варианта не помогли: пометь NOT_FOUND и добавь "may exist outside indexed databases"
+- Неанглоязычные названия: попробуй оригинальный язык И английский перевод
+- Ограничение по запросам: разбивай на пакеты с паузами, в отчёте отмечай частичные результаты
 
-## TOKEN BUDGET
-- Main: ~3K (parsing + coordination)
-- Resolution subagent: ~10-15K per batch of 10
-- OA check subagent: ~5K
-- Claim verification subagent: ~20-40K (reads PDFs)
-- Report: ~5K
-- Total: ~25-65K (depends on citation count + claim verification)
+## БЮДЖЕТ ТОКЕНОВ
+- Основная сессия: ~3K (разбор + координация)
+- Субагент разрешения: ~10-15K на пакет из 10
+- Субагент OA-проверки: ~5K
+- Субагент проверки утверждений: ~20-40K (читает PDF)
+- Отчёт: ~5K
+- Итого: ~25-65K (зависит от числа цитат и проверки утверждений)
 
-## REPORT DESIGN
-When writing the HTML report, follow the design system in /report-template EXACTLY.
-Do NOT use Tailwind CDN. Use the custom CSS variables, Crimson Pro font, and academic book aesthetic defined there.
+## ДИЗАЙН ОТЧЁТА
+При написании HTML-отчёта строго следуй дизайн-системе в /report-template.
+НЕ используй Tailwind CDN. Используй пользовательские CSS-переменные, шрифт Crimson Pro и академическую книжную эстетику, определённую там.

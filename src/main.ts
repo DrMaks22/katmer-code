@@ -4,6 +4,7 @@ import { ReportView, VIEW_TYPE_REPORT } from "./report-view";
 import { ClaudeNativeSettingTab } from "./settings";
 import { DEFAULT_SETTINGS, SKILL_CATALOG, type ClaudeNativeSettings, type SavedSession } from "./types";
 import { inlineDiffExtensions } from "./editor-extension";
+import { t } from "./i18n";
 import { existsSync, writeFileSync, unlinkSync, mkdirSync, readFileSync, readdirSync, watch } from "fs";
 import { join } from "path";
 import { homedir } from "os";
@@ -76,13 +77,13 @@ export default class ClaudeNativePlugin extends Plugin {
     // Commands
     this.addCommand({
       id: "open-claude-chat",
-      name: "Open chat",
+      name: t("main.command.openChat"),
       callback: () => void this.activateView(),
     });
 
     this.addCommand({
       id: "new-claude-session",
-      name: "New session",
+      name: t("main.command.newSession"),
       callback: () => {
         void this.activateView().then(() => {
           this.getChatView()?.startNewSession();
@@ -92,7 +93,7 @@ export default class ClaudeNativePlugin extends Plugin {
 
     this.addCommand({
       id: "resume-claude-session",
-      name: "Resume session",
+      name: t("main.command.resumeSession"),
       callback: () => void this.showSessionPicker(),
     });
 
@@ -101,7 +102,7 @@ export default class ClaudeNativePlugin extends Plugin {
 
     this.addCommand({
       id: "open-report",
-      name: "Open HTML report in viewer",
+      name: t("main.command.openReport"),
       callback: () => void this.pickAndOpenReport(),
     });
 
@@ -167,13 +168,13 @@ export default class ClaudeNativePlugin extends Plugin {
         .filter(f => f.endsWith(".html"))
         .sort().reverse();
       if (files.length === 0) {
-        new Notice("No reports found in reports/");
+        new Notice(t("main.notice.noReportsFound"));
         return;
       }
       const modal = new ReportPickerModal(this.app, files, reportsDir, (fp) => void this.openReport(fp));
       modal.open();
     } catch {
-      new Notice("Could not read reports/");
+      new Notice(t("main.notice.couldNotReadReports"));
     }
   }
 
@@ -198,19 +199,19 @@ export default class ClaudeNativePlugin extends Plugin {
           const el = notice.messageEl;
           el.empty();
           el.addClass("katmer-report-notice");
-          el.createEl("div", { cls: "katmer-report-notice-title", text: "Report ready" });
+          el.createEl("div", { cls: "katmer-report-notice-title", text: t("main.notice.reportReady") });
           el.createEl("div", { cls: "katmer-report-notice-file", text: label });
           const btnRow = el.createDiv("katmer-report-notice-buttons");
 
           const openBtn = btnRow.createEl("button", {
             cls: "katmer-report-notice-btn katmer-report-notice-btn-primary",
-            text: "Open in app",
+            text: t("main.notice.openInApp"),
           });
           openBtn.addEventListener("click", () => { void this.openReport(fullPath); notice.hide(); });
 
           const browserBtn = btnRow.createEl("button", {
             cls: "katmer-report-notice-btn",
-            text: "Open in browser",
+            text: t("main.notice.openInBrowser"),
           });
           browserBtn.addEventListener("click", () => {
             void electronShell.openPath(fullPath);
@@ -270,7 +271,10 @@ export default class ClaudeNativePlugin extends Plugin {
               if (!existing.startsWith("<!-- KatmerCode skill:")) {
                 // File exists and belongs to user — don't overwrite
                 // User-owned file exists — skip, Notice already shown
-                new Notice(`Skill "${skill.name}" not installed: ~/.claude/commands/${skill.fileName} already exists (not owned by KatmerCode).`);
+                new Notice(t("settings.notice.skillConflict", {
+                  skillName: skill.name,
+                  path: `~/.claude/commands/${skill.fileName}`,
+                }));
                 canWrite = false;
               }
             } catch { /* if we can't read, try to write anyway */ }
@@ -322,7 +326,7 @@ export default class ClaudeNativePlugin extends Plugin {
     await this.activateView();
 
     if (!this.settings.sessions || this.settings.sessions.length === 0) {
-      new Notice("No saved sessions yet.");
+      new Notice(t("main.notice.noSavedSessions"));
       return;
     }
 
@@ -363,7 +367,7 @@ class SessionPickerModal extends FuzzySuggestModal<SavedSession> {
     super(app);
     this.sessions = sessions;
     this.onChoose = onChoose;
-    this.setPlaceholder("Search sessions…");
+    this.setPlaceholder(t("main.sessionPicker.placeholder"));
   }
 
   getItems(): SavedSession[] {
@@ -391,7 +395,7 @@ class ReportPickerModal extends FuzzySuggestModal<string> {
     this.files = files;
     this.dir = dir;
     this.onChooseFn = onChoose;
-    this.setPlaceholder("Select a report\u2026");
+    this.setPlaceholder(t("main.reportPicker.placeholder"));
   }
 
   getItems() { return this.files; }

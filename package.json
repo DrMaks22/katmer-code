@@ -1,7 +1,7 @@
 {
   "name": "obsidian-claude-native",
   "version": "0.2.0",
-  "description": "Native Claude Code integration for Obsidian — academic-grade AI assistant",
+  "description": "Нативная интеграция Claude Code для Obsidian с встроенным просмотром изменений, исследовательскими навыками и поддержкой MCP",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",

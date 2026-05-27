@@ -1,6 +1,7 @@
 import { StateField, StateEffect, RangeSetBuilder } from "@codemirror/state";
 import { Decoration, DecorationSet, WidgetType, EditorView } from "@codemirror/view";
 import * as DiffMatchPatchModule from "diff-match-patch";
+import { t } from "./i18n";
 
 const DiffMatchPatch = (DiffMatchPatchModule as { default?: typeof DiffMatchPatchModule }).default || DiffMatchPatchModule;
 const dmp = new DiffMatchPatch();
@@ -119,7 +120,7 @@ class ChangeHoverWidget extends WidgetType {
     const accept = document.createElement("button");
     accept.className = "cc-hover-btn cc-hover-accept";
     accept.innerHTML = "✓";
-    accept.title = "Accept";
+    accept.title = t("editor.diff.acceptTitle");
     accept.addEventListener("click", (e) => {
       e.preventDefault(); e.stopPropagation();
       view.dispatch({ effects: acceptChange.of(this.changeId) });
@@ -128,7 +129,7 @@ class ChangeHoverWidget extends WidgetType {
     const reject = document.createElement("button");
     reject.className = "cc-hover-btn cc-hover-reject";
     reject.innerHTML = "✕";
-    reject.title = "Undo";
+    reject.title = t("editor.diff.rejectTitle");
     reject.addEventListener("click", (e) => {
       e.preventDefault(); e.stopPropagation();
       rejectSingleChange(view, this.changeId);
