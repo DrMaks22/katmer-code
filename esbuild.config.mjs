@@ -1,4 +1,5 @@
 import esbuild from "esbuild";
+import fs from "fs";
 import process from "process";
 import builtins from "builtin-modules";
 const banner = `/*
@@ -8,6 +9,18 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = process.argv[2] === "production";
+
+function patchImportMetaUrl() {
+  const bundlePath = "main.js";
+  const source = fs.readFileSync(bundlePath, "utf8");
+  const patched = source.replace(
+    "var import_meta = {};",
+    'var import_meta = { url: require("url").pathToFileURL(__filename).href };'
+  );
+  if (patched !== source) {
+    fs.writeFileSync(bundlePath, patched);
+  }
+}
 
 const context = await esbuild.context({
   banner: { js: banner },
@@ -41,6 +54,7 @@ const context = await esbuild.context({
 
 if (prod) {
   await context.rebuild();
+  patchImportMetaUrl();
   process.exit(0);
 } else {
   await context.watch();
