@@ -437,7 +437,7 @@
   border: 1px solid var(--cc-border);
   border-radius: var(--cc-radius);
   box-shadow: 0 8px 30px rgba(26,22,19,0.12);
-  width: 240px;
+  width: 272px;
   padding: 8px;
   z-index: 200;
   animation: cc-fade 0.12s ease;
@@ -482,26 +482,28 @@
   margin-bottom: 8px;
 }
 .cc-popup-effort-row {
-  display: flex;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
   background: var(--cc-cream-dark);
   border-radius: 8px;
-  padding: 3px;
+  padding: 4px;
 }
 
 .cc-pill {
   font-family: var(--cc-font);
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 500;
-  padding: 5px 12px;
+  min-width: 0;
+  padding: 6px 8px;
   border: none;
   border-radius: 6px;
   background: transparent;
   color: var(--cc-text-tertiary);
   cursor: pointer;
   transition: all 120ms;
-  flex: 1;
   text-align: center;
+  line-height: 1.1;
 }
 .cc-pill:hover { color: var(--cc-text); }
 .cc-pill.is-active {
